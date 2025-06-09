@@ -1,68 +1,390 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
+ --black: #1B1B1B;
+ --grey: #a5a5a5;
+ --grey-black: #444444;
+}
+
+
+body {
+  @apply font-sfpro;
+}
+
+.anton-regular {
+  font-family: "Anton", sans-serif;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  font-style: normal;
 }
 
 a {
+  text-decoration: none;
+}
+.link {
+  position: relative;
+  display: inline-block;
+}
+
+.section-main-header {
+  padding-top: 64px;
+}
+
+.section-main {
+  padding: 64px 128px;
+}
+
+/* Link Styles */
+.link {
+  font-size: 15px;
+}
+
+.link::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -4px; 
+  width: 0;
+  height: 2px;
+  background-color: var(--black);
+  transition: width 0.3s ease;
+}
+
+.link:hover::before {
+  width: 60%;
+}
+
+
+.btn {
+  font-size: 15px;
+  border: 2px solid var(--grey);
+  padding: 10px 30px;
+  border-radius: 30px;
   font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+  transition: .3s;
 }
 
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+.btn:hover {
+  color: var(--grey);
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+.link-resp {
+  font-size: 18px;
+  transition: .3s;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
+.link-resp:hover {
+  color: var(--grey);
+}
+
+
+.ri-close-line {
+  font-size: 30px;
+}
+
+.ri-menu-3-line {
+  font-size: 25px;
+}
+
+/* Responsive Header */
+
+@media (max-width: 768px) {
+
+  .header-div {
+    padding: 15px;
+  }
+
+  .header-logo {
+    height: 30px;
+  }
+
+  /* Hide desktop navigation */
+  header > div.header-links {
+    display: none;
+  }
+
+  /* Show mobile menu button */
+  .ri-menu-3-line {
+    display: block !important;
+    cursor: pointer;
+    z-index: 999;
+  }
+  /* Mobile menu styles */
+  .menu-header {
+    background-color: white;
+    z-index: 1000;
+    width: 0;
+    overflow: hidden;
+    transition: width 0.4s ease-in-out;
+    display: block;
+  }
+
+  .menu-header.active {
+    width: 100vw;
+  }
+
+   /* Close button styles */
+   .ri-close-line {
+    cursor: pointer;
+    z-index: 1000;
+  }
+
+  /* Menu content */
+  .menu-header > div {
+    width: 100%;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out 0.1s;
+  }
+
+  .menu-header.active > div {
+    opacity: 1;
+  }
+  
+  /* Link animations */
+  .link-resp {
+    transform: translateX(20px);
+    opacity: 0;
+    transition: transform 0.4s ease-in-out, opacity 0.4s ease-in-out;
+  }
+
+  .menu-header.active .link-resp {
+    transform: translateX(0);
+    opacity: 1;
+  }
+
+  .anton-regular {
+    font-size: 75px;
+  }
+
+}
+
+
+/* Home Hero Section */
+.hero-description {
+  font-size: 25px;
+  color: var(--grey-black);
+  margin-top: 40px;
+}
+
+.untab-btn {
+  color: var(--grey);
+  border-color: transparent;
   font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
+}
+
+
+.product-hero {
+  transform: translateY(-50px);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.drink-info {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Enhanced arrow animation */
+.ri-arrow-right-line {
+  position: absolute;
+  top: 50%;
+  right: 100px;
+  font-size: 30px;
+  color: var(--black);
   cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  z-index: 100;
+  transition: color 0.3s ease;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+
+
+/* Loading state animation */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
   }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
+  50% {
+    opacity: 0.5;
   }
 }
+
+.transitioning {
+  animation: pulse 0.3s ease-in-out;
+}
+
+/* Responsive Hero Section */
+@media screen and (max-width: 768px) {
+  .hero-description {
+    font-size: 16px;
+  }
+}
+
+/* Responsive DrinkSlider */
+@media (max-width: 768px) {
+  /* Container */
+  .drink-slider-container {
+    padding: 2rem 1rem !important;
+  }
+
+  /* Tabs responsive */
+  .tabs-container {
+    gap: 1.5rem !important;
+    font-size: 16px !important;
+    margin-bottom: 2rem;
+  }
+
+  .btn-tab {
+    padding-bottom: 0.5rem !important;
+    font-size: 16px !important;
+  }
+
+  /* Main content layout - chỉ áp dụng cho mobile */
+  .main-content {
+    flex-direction: column !important;
+    gap: 3rem !important;
+    margin-top: 2rem !important;
+  }
+
+  /* Image container - đặt lên trên (order: 1) */
+  .image-container {
+    order: 1 !important;
+    width: 100% !important;
+    margin-bottom: 1rem;
+  }
+
+  /* Product image responsive */
+  .product-hero {
+    height: 350px !important;
+  }
+
+  /* Background circle responsive */
+  .absolute.w-\[350px\].h-\[350px\] {
+    width: 220px !important;
+    height: 220px !important;
+  }
+
+  /* Arrow positioning */
+  .ri-arrow-right-line {
+    right: 1rem !important;
+    font-size: 28px !important;
+  }
+
+  /* Drink info column - đặt xuống dưới (order: 2) */
+  .drink-info {
+    order: 2 !important;
+    flex: none !important;
+    width: 100% !important;
+    text-align: center !important;
+    gap: 1.5rem !important;
+  }
+
+  .drink-info h1 {
+    font-size: 1.75rem !important;
+    text-align: center !important;
+    line-height: 1.2 !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .drink-info p {
+    font-size: 1rem !important;
+    text-align: center !important;
+    line-height: 1.5 !important;
+    margin: 1rem 0 !important;
+    color: var(--grey-black) !important;
+  }
+
+  /* Button responsive */
+  .drink-info .btn {
+    font-size: 14px !important;
+    padding: 12px 32px !important;
+    margin-top: 1rem !important;
+  }
+
+  /* Hide next production column completely on mobile */
+  .next-production {
+    display: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Extra small screens */
+  .drink-slider-container {
+    padding: 1.5rem 0.75rem !important;
+  }
+
+  /* Tabs for mobile */
+  .tabs-container {
+    gap: 1rem !important;
+    font-size: 14px !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+  }
+
+  .btn-tab {
+    font-size: 14px !important;
+    white-space: nowrap !important;
+  }
+
+  /* Main content spacing */
+  .main-content {
+    gap: 2rem !important;
+  }
+
+  /* Product image smaller */
+  .product-hero {
+    height: 280px !important;
+  }
+
+  /* Background circle smaller */
+  .absolute.w-\[350px\].h-\[350px\] {
+    width: 180px !important;
+    height: 180px !important;
+  }
+
+  /* Arrow smaller */
+  .ri-arrow-right-line {
+    right: 0.5rem !important;
+    font-size: 24px !important;
+  }
+
+  /* Text sizes */
+  .drink-info h1 {
+    font-size: 1.5rem !important;
+    line-height: 1.2 !important;
+  }
+
+  .drink-info p {
+    font-size: 0.9rem !important;
+    line-height: 1.4 !important;
+  }
+
+  /* Button smaller */
+  .drink-info .btn {
+    font-size: 13px !important;
+    padding: 10px 24px !important;
+  }
+}
+
+/* Tablet size optimization */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .drink-slider-container {
+    padding: 3rem 2rem !important;
+  }
+
+  .main-content {
+    gap: 2rem !important;
+  }
+
+  .product-hero {
+    height: 600px !important;
+  }
+
+  .absolute.w-\[350px\].h-\[350px\] {
+    width: 280px !important;
+    height: 280px !important;
+  }
+
+  .ri-arrow-right-line {
+    right: 2rem !important;
+  }
+}
+
