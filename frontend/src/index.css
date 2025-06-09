@@ -1,17 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
 
 :root {
  --black: #1B1B1B;
  --grey: #a5a5a5;
  --grey-black: #444444;
+ --black-light: #404040;
+ --grey-light: #e8e8e8;
+ --be: #fde3dc;
+ --huong: #fbeaf2;
 }
 
 
-body {
-  @apply font-sfpro;
-}
+body{
+  font-family: "Poppins", sans-serif;
+}                                              
 
 .anton-regular {
   font-family: "Anton", sans-serif;
@@ -184,7 +190,7 @@ a {
 }
 
 /* Enhanced arrow animation */
-.ri-arrow-right-line {
+.change-arrow {
   position: absolute;
   top: 50%;
   right: 100px;
@@ -263,7 +269,7 @@ a {
   }
 
   /* Arrow positioning */
-  .ri-arrow-right-line {
+  .change-arrow {
     right: 1rem !important;
     font-size: 28px !important;
   }
@@ -341,7 +347,7 @@ a {
   }
 
   /* Arrow smaller */
-  .ri-arrow-right-line {
+  .change-arrow {
     right: 0.5rem !important;
     font-size: 24px !important;
   }
@@ -383,8 +389,449 @@ a {
     height: 280px !important;
   }
 
-  .ri-arrow-right-line {
+  .change-arrow {
     right: 2rem !important;
   }
 }
 
+/* Video Hero Responsive */
+@media (max-width: 768px) {
+  /* Video container */
+  .video-hero-container {
+    height: 60vh !important; /* Giảm chiều cao trên mobile */
+    padding: 1rem !important; /* Giảm padding */
+    margin: 2rem 0 !important; /* Giảm margin */
+  }
+
+  /* Play button smaller */
+  .video-play-button {
+    width: 60px !important;
+    height: 60px !important;
+  }
+
+  .video-play-button i {
+    font-size: 24px !important;
+  }
+
+  /* Ẩn video text trên mobile */
+  .video-text {
+    display: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Video container cho màn hình nhỏ */
+  .video-hero-container {
+    height: 50vh !important;
+    padding: 0.5rem !important;
+    margin: 1rem 0 !important;
+    /* Bỏ border-radius: 12px !important; */
+  }
+
+  /* Play button nhỏ hơn */
+  .video-play-button {
+    width: 50px !important;
+    height: 50px !important;
+  }
+
+  .video-play-button i {
+    font-size: 20px !important;
+  }
+
+  
+}
+
+.introduce-title {
+  font-size: 200px;
+  color: var(--be);
+}
+
+
+.produce-photo-1 {
+  max-width: 600px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: -100px;
+}
+
+.produce-photo-2 {
+  max-width: 400px;
+  position: absolute;
+  bottom: -1000px;
+}
+
+.produce-photo-3 {
+  max-width: 500px;
+  position: absolute;
+  bottom: -900px;
+  z-index: -1;
+  right: 0;
+}
+
+.introduce-text {
+  position: absolute;
+  text-align: left;
+  top: 100%;
+  left: 8rem;
+  max-width: 450px;
+}
+
+.introduce-text h1 {
+  font-size: 40px;
+  color: var(--black-light);
+  line-height: 1.2;
+}
+
+.introduce-text p {
+  font-size: 17px;
+  color: var(--grey-black);
+  line-height: 2;
+  font-weight: 500;
+}
+
+
+.section-2 {
+  margin-top: 1300px;
+}
+
+.section-2 > .introduce-text {
+  left: 60rem;
+  top: 50%;
+}
+
+
+@media screen and (max-width: 768px) {
+  .hero-introduce {
+    width: 100%;
+    padding-inline: 0;
+  }
+
+  .introduce-title {
+    font-size: 50px;
+  }
+  .produce-photo-2, .produce-photo-3 {
+    display: none;
+  }
+
+
+  .introduce-text, .section-2 > .introduce-text {
+    position: relative;
+    text-align: center;
+    top: 0;
+    left: 0;
+    max-width: 100%;
+    padding: 0 1rem;
+  }
+
+  .produce-photo-1 {
+    max-width: 300px;
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 0;
+  }
+
+  .section-2 {
+    margin-top: 0;
+  }
+}
+
+.blog-section {
+  margin-top: 1100px
+}
+
+
+.blog-section-title {
+  max-width: 400px;
+}
+
+.blog-section-title span {
+  font-size: 25px;
+}
+
+.blog-section-title h1 {
+  font-size: 100px;
+  line-height: 1;
+  font-weight: 600;
+}
+
+.blog-section-title p {
+  font-size: 15px;
+  line-height: 2;
+}
+
+.blog-section-icon {
+  font-size: 25px;
+  cursor: pointer;
+}
+
+.icon-hehe {
+  color: white;
+  outline: none;
+  border: 2px solid white;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  display: grid;
+  place-items: center;
+}
+
+.hehe {
+  transition: .3s
+}
+
+.blog-section-icon:hover .hehe {
+  transform: translateX(3px);
+}
+
+@media screen and (max-width: 768px) {
+  .blog-section {
+    padding: 20px;
+    margin-top: 0;
+    flex-direction: column;
+    gap: 1rem;
+    background-image: url('img/7.jpg') !important;
+    justify-content: center !important; /* Căn giữa nội dung */
+    height: auto !important;
+    
+  }
+  .blog-section-title {
+    max-width: 100%;
+    text-align: center;
+    gap: 10px;
+  }
+  .blog-section-icon {
+     font-size: 15px;
+  }
+
+
+  .blog-section-title h1 {
+    font-size: 35px;
+    line-height: 1.2;
+  }
+} 
+
+
+.gallery-text h1 {
+  color: var(--huong);
+}
+
+.gallery-text p {
+  color: var(--black);
+  font-size: 40px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.gsi {
+  font-size: 35px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.gsi:hover {
+  transform: translateY(-3px);
+}
+
+.gallery-social-icon {
+  gap: 50px;
+}
+
+
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 350px);
+    grid-template-rows: repeat(4, 350px);
+    gap: 15px;
+    margin-top: 50px;
+}
+
+.gallery-grid img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.grid-1 {
+  grid-column: 1 / 3;
+  grid-row: 1 / 3;
+}
+
+.grid-6 {
+  grid-row: 3 / 5;
+  grid-column: 2 / 4;
+}
+
+@media (max-width: 768px) {
+  .gallery-section {
+    padding: 20px 0;
+  }
+  .gallery-text h1 {
+    font-size: 70px;
+  }
+
+  .gallery-text p {
+    font-size: 15px;
+  }
+  .gallery-grid {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(4, 100px);
+    gap: 5px;
+  }
+
+  .gallery-social-icon {
+    gap: 20px;
+  }
+
+  .gsi {
+    font-size: 20px;
+  }
+}
+
+
+.border-footer {
+  width: 100%;
+  border-top: 2px solid var(--grey-light);
+}
+
+.icon-link {
+  gap: 100px;
+}
+
+.link-ico {
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  color: var(--grey-black);
+  gap: 100px;
+}
+
+.link-ico a {
+  transition: .3s;
+}
+
+.link-ico a:hover  {
+  color: var(--grey);
+}
+
+.copyright-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--grey-black);
+  text-align: center;
+  margin-top: 20px;
+}
+
+/* Footer Responsive */
+@media (max-width: 768px) {
+  .footer {
+    padding: 2rem 1rem !important;
+    gap: 2rem !important;
+  }
+
+  /* Main footer content */
+  .footer > div:nth-child(2) {
+    flex-direction: column !important;
+    gap: 3rem !important;
+    width: 100% !important;
+  }
+
+  /* Logo and links section */
+  .icon-link {
+    flex-direction: column !important;
+    gap: 2rem !important;
+    width: 100% !important;
+    text-align: center !important;
+  }
+
+  /* Logo */
+  .icon-link img {
+    height: 2.5rem !important;
+    margin: 0 auto !important;
+  }
+
+  /* Navigation links grid */
+  .link-ico {
+    grid-template-columns: 1fr !important;
+    gap: 2rem !important;
+    text-align: center !important;
+    width: 100% !important;
+  }
+
+  .link-ico > div {
+    gap: 1rem !important;
+  }
+
+  .link-ico a {
+    font-size: 16px !important;
+  }
+
+  /* Social and button section */
+  .footer > div:nth-child(2) > div:last-child {
+    gap: 2rem !important;
+    order: -1 !important; /* Đưa social lên trên logo */
+  }
+
+  /* Social icons */
+  .footer > div:nth-child(2) > div:last-child > div:first-child {
+    gap: 2rem !important;
+  }
+
+  .fco {
+    font-size: 24px !important;
+  }
+
+  /* Button */
+  .footer .btn {
+    font-size: 16px !important;
+    padding: 12px 32px !important;
+  }
+
+  /* Copyright text */
+  .copyright-text {
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+    padding: 0 1rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .footer {
+    padding: 1.5rem 0.75rem !important;
+    gap: 1.5rem !important;
+  }
+
+  /* Logo smaller */
+  .icon-link img {
+    height: 2rem !important;
+  }
+
+  /* Links smaller */
+  .link-ico a {
+    font-size: 14px !important;
+  }
+
+  /* Social icons smaller */
+  .fco {
+    font-size: 20px !important;
+  }
+
+  .footer > div:nth-child(2) > div:last-child > div:first-child {
+    gap: 1.5rem !important;
+  }
+
+  /* Button smaller */
+  .footer .btn {
+    font-size: 14px !important;
+    padding: 10px 24px !important;
+  }
+
+  /* Copyright smaller */
+  .copyright-text {
+    font-size: 12px !important;
+  }
+}

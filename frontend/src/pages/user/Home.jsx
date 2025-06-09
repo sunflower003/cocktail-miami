@@ -1,7 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import ScrollReveal from 'scrollreveal';
 import DrinkSlider from '../../components/DrinkSlider';
 import VideoHero from '../../components/Video';
+import Introduction from '../../components/Introduction';
+import BlogSection from '../../components/BlogSection';
+import GallerySection from '../../components/GallerySection';
+import Footer from '../../components/Footer';
 
 
 const Home = () => {
@@ -11,10 +15,10 @@ const Home = () => {
         backgroundImage: 'img/berry.jpg'
     });
 
-    const handleProductChange = (newProduct) => {
+    // Sử dụng useCallback để tránh tạo function mới mỗi lần render
+    const handleProductChange = useCallback((newProduct) => {
         setCurrentProduct(newProduct);
-        // Không thay đổi titleKey nữa
-    };
+    }, []);
 
     // ScrollReveal chỉ chạy một lần khi component mount
     useEffect(() => {
@@ -26,19 +30,27 @@ const Home = () => {
             opacity: 0,
             scale: 1,
             easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-            reset: false,     // Không lặp lại
-            cleanup: false,   // Không cleanup
+            reset: false,
+            cleanup: false,
             viewFactor: 0.5
         });
 
         sr.reveal('.hero-title-reveal');
         sr.reveal('.hero-description');
         sr.reveal('.main-content');
+        sr.reveal('.video-text', {origin: 'left'});
+        sr.reveal('.introduce-photo', {origin: 'right'});
+        sr.reveal('.introduce-text', {origin: 'left'});
+        sr.reveal('.blog-section-title', {origin: 'left'});
+        sr.reveal('.blog-section-icon', {origin: 'right'});
+        sr.reveal('.logo-footer');
+        sr.reveal('.link-ico', {delay: 300});
+        sr.reveal('.button-footer', {delay: 600});
 
         return () => {
             sr.destroy();
         };
-    }, []); // Chỉ chạy một lần khi mount
+    }, []);
 
     return (
         <div>
@@ -48,7 +60,7 @@ const Home = () => {
                     style={{ 
                         backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), url('${currentProduct.backgroundImage}')`,
                         backgroundBlendMode: 'multiply',
-                        transition: 'background-image 0.6s ease-in-out' // Smooth background transition
+                        transition: 'background-image 0.6s ease-in-out'
                     }}
                 >
                     SO FRESH & <br/> SO SQUEEZED
@@ -60,6 +72,10 @@ const Home = () => {
                 <DrinkSlider onProductChange={handleProductChange} />
             </div>
             <VideoHero />
+            <Introduction />
+            <BlogSection />
+            <GallerySection />
+            <Footer />
         </div>  
     )
 };

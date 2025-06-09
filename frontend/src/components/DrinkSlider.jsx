@@ -185,7 +185,7 @@ export default function DrinkSlider({ onProductChange }) {
             }`}
           />
           <i 
-            className="ri-arrow-right-line cursor-pointer transition-colors duration-300"
+            className="ri-arrow-right-line change-arrow cursor-pointer transition-colors duration-300"
             onClick={nextProduct}
             style={{
               color: activeColor,
