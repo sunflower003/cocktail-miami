@@ -15,8 +15,14 @@ export const AuthProvider = ({ children }) => {
     const [token, setToken] = useState(localStorage.getItem('token'));
     const [loading, setLoading] = useState(true);
 
-    // API base URL từ environment variable
-    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    // API base URL - TỰ ĐỘNG CHUYỂN ĐỔI dựa trên environment
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 
+                        (import.meta.env.PROD 
+                            ? 'https://your-backend-name.onrender.com' // Thay bằng URL Render thật
+                            : 'http://localhost:5000');
+
+    console.log('🌐 Current Environment:', import.meta.env.MODE);
+    console.log('🔗 API_BASE_URL:', API_BASE_URL);
 
     // Helper function for API calls
     const apiCall = async (endpoint, options = {}) => {
@@ -31,10 +37,11 @@ export const AuthProvider = ({ children }) => {
         };
 
         try {
+            console.log(`📡 API Call: ${options.method || 'GET'} ${url}`);
             const response = await fetch(url, config);
             return response;
         } catch (error) {
-            console.error('API call failed:', error);
+            console.error('❌ API call failed:', error);
             throw error;
         }
     };

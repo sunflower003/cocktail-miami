@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function Register() {
     const [formData, setFormData] = useState({
@@ -15,6 +16,12 @@ export default function Register() {
     const [error, setError] = useState('');
     const [registrationResponse, setRegistrationResponse] = useState(null);
     const navigate = useNavigate();
+
+    // Sử dụng AuthContext để có API_BASE_URL tự động
+    const API_URL = import.meta.env.VITE_API_URL || 
+                   (import.meta.env.PROD 
+                       ? 'https://your-backend-name.onrender.com' // Thay bằng URL thật
+                       : 'http://localhost:5000');
 
     const handleChange = (e) => {
         setFormData({
@@ -41,7 +48,7 @@ export default function Register() {
         setLoading(true);
 
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+            console.log('📡 Registration API URL:', `${API_URL}/api/auth/register`);
             
             const response = await fetch(`${API_URL}/api/auth/register`, {
                 method: 'POST',
@@ -68,7 +75,6 @@ export default function Register() {
                     navigate('/verify-email', { 
                         state: { 
                             email: formData.email
-                            // BỎ phần verificationCode - User phải vào email để lấy mã
                         } 
                     });
                 }, 3000);
@@ -77,7 +83,7 @@ export default function Register() {
             }
         } catch (error) {
             console.error('Registration error:', error);
-            setError('Network error. Please try again.');
+            setError('Network error. Please check your internet connection and try again.');
         } finally {
             setLoading(false);
         }

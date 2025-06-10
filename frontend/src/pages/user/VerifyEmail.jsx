@@ -11,11 +11,18 @@ export default function VerifyEmail() {
     const navigate = useNavigate();
     const email = location.state?.email;
 
+    // API URL tự động chuyển đổi
+    const API_URL = import.meta.env.VITE_API_URL || 
+                   (import.meta.env.PROD 
+                       ? 'https://your-backend-name.onrender.com' // Thay bằng URL thật
+                       : 'http://localhost:5000');
+
     useEffect(() => {
         if (!email) {
             navigate('/register');
         }
-    }, [email, navigate]);
+        console.log('🔗 VerifyEmail API URL:', API_URL);
+    }, [email, navigate, API_URL]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -23,8 +30,6 @@ export default function VerifyEmail() {
         setLoading(true);
 
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-            
             const response = await fetch(`${API_URL}/api/auth/verify-email`, {
                 method: 'POST',
                 headers: {
@@ -47,7 +52,7 @@ export default function VerifyEmail() {
                 setError(data.message || 'Verification failed');
             }
         } catch (error) {
-            setError(error.message || 'Network error. Please try again.');
+            setError('Network error. Please check your internet connection and try again.');
         } finally {
             setLoading(false);
         }
@@ -59,8 +64,6 @@ export default function VerifyEmail() {
         setSuccess('');
 
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-            
             const response = await fetch(`${API_URL}/api/auth/resend-verification`, {
                 method: 'POST',
                 headers: {
@@ -77,7 +80,7 @@ export default function VerifyEmail() {
                 setError(data.message || 'Failed to resend code');
             }
         } catch (error) {
-            setError( error.message || 'Network error. Please try again.');
+            setError('Network error. Please check your internet connection and try again.');
         } finally {
             setResendLoading(false);
         }
