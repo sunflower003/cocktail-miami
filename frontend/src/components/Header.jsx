@@ -140,7 +140,7 @@ const Header = () => {
                                     {/* User Info Header */}
                                     <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-12 h-10 bg-gradient-to-br from-gray-600 to-gray-800 rounded-full flex items-center justify-center">
+                                            <div className="w-10 h-10 bg-gradient-to-br from-gray-600 to-gray-800 rounded-full flex items-center justify-center shadow-md">
                                                 <span className="text-white font-bold">
                                                     {getUserInitials()}
                                                 </span>
@@ -256,7 +256,7 @@ const Header = () => {
                         ) : isAuthenticated ? (
                             <div className="border-t pt-4 mt-4">
                                 <div className="flex items-center gap-3 mb-4 px-2">
-                                    <div className="w-12 h-12 bg-gradient-to-br from-gray-600 to-gray-800 rounded-full flex items-center justify-center">
+                                    <div className="w-10 h-10 bg-gradient-to-br from-gray-600 to-gray-800 rounded-full flex items-center justify-center shadow-md">
                                         <span className="text-white font-bold">
                                             {getUserInitials()}
                                         </span>

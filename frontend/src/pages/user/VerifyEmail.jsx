@@ -23,7 +23,9 @@ export default function VerifyEmail() {
         setLoading(true);
 
         try {
-            const response = await fetch('/api/auth/verify-email', {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+            
+            const response = await fetch(`${API_URL}/api/auth/verify-email`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -54,9 +56,12 @@ export default function VerifyEmail() {
     const handleResend = async () => {
         setResendLoading(true);
         setError('');
+        setSuccess('');
 
         try {
-            const response = await fetch('/api/auth/resend-verification', {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+            
+            const response = await fetch(`${API_URL}/api/auth/resend-verification`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -67,12 +72,12 @@ export default function VerifyEmail() {
             const data = await response.json();
 
             if (data.success) {
-                setSuccess('Verification code sent successfully!');
+                setSuccess('New verification code sent to your email! Please check your inbox.');
             } else {
                 setError(data.message || 'Failed to resend code');
             }
         } catch (error) {
-            setError(error.message || 'Network error. Please try again.');
+            setError( error.message || 'Network error. Please try again.');
         } finally {
             setResendLoading(false);
         }
@@ -90,8 +95,18 @@ export default function VerifyEmail() {
                 </h2>
 
                 <p className="text-gray-600 text-center mb-6">
-                    We've sent a verification code to <strong>{email}</strong>. Please enter the code below.
+                    We've sent a verification code to <strong>{email}</strong>. Please check your email and enter the code below.
                 </p>
+
+                <div className="mb-4 p-3 bg-blue-100 border border-blue-400 text-blue-700 rounded">
+                    <p className="text-sm">
+                        <strong>📧 Check your email</strong> for the 6-digit verification code. 
+                        It may take a few minutes to arrive.
+                    </p>
+                    <p className="text-xs mt-1">
+                        Don't forget to check your spam/junk folder if you don't see it in your inbox.
+                    </p>
+                </div>
 
                 {error && (
                     <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
@@ -141,6 +156,10 @@ export default function VerifyEmail() {
                         Back to Register
                     </button>
                 </form>
+
+                <div className="mt-6 text-center text-sm text-gray-500">
+                    <p>Code expires in 10 minutes</p>
+                </div>
             </div>
         </div>
     );

@@ -18,7 +18,6 @@ export default function Login() {
             ...formData,
             [e.target.name]: e.target.value
         });
-        // Clear error when user starts typing
         if (error) setError('');
     };
 
@@ -27,7 +26,6 @@ export default function Login() {
         setError('');
         setLoading(true);
 
-        // Basic validation
         if (!formData.email || !formData.password) {
             setError('Please fill in all fields');
             setLoading(false);
@@ -35,7 +33,9 @@ export default function Login() {
         }
 
         try {
-            const response = await fetch('/api/auth/login', {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+            
+            const response = await fetch(`${API_URL}/api/auth/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -46,22 +46,21 @@ export default function Login() {
             const data = await response.json();
 
             if (data.success) {
-                // Check if email is verified
-                if (!data.data.user.isEmailVerified) {
+                // Login successful
+                login(data.data.user, data.data.token);
+                navigate('/');
+            } else {
+                // Check if need email verification
+                if (data.requireEmailVerification) {
                     navigate('/verify-email', { 
                         state: { 
-                            email: formData.email,
+                            email: data.email || formData.email,
                             message: 'Please verify your email before logging in.'
                         } 
                     });
-                    return;
+                } else {
+                    setError(data.message || 'Login failed. Please try again.');
                 }
-                
-                // Login successful
-                login(data.data.user, data.data.token);
-                navigate('/'); // Redirect to home page
-            } else {
-                setError(data.message || 'Login failed. Please try again.');
             }
         } catch (error) {
             console.error('Login error:', error);
@@ -120,12 +119,10 @@ export default function Login() {
                             disabled={loading}
                         >
                             {showPassword ? (
-                                // Eye slash icon (hide password)
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
                                 </svg>
                             ) : (
-                                // Eye icon (show password)
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -168,7 +165,6 @@ export default function Login() {
                     </div>
                 </form>
 
-                {/* Additional links */}
                 <div className="mt-6 text-center text-sm text-gray-600">
                     <p>
                         Don't have an account? {' '}

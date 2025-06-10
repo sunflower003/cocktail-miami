@@ -15,6 +15,30 @@ export const AuthProvider = ({ children }) => {
     const [token, setToken] = useState(localStorage.getItem('token'));
     const [loading, setLoading] = useState(true);
 
+    // API base URL từ environment variable
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+    // Helper function for API calls
+    const apiCall = async (endpoint, options = {}) => {
+        const url = `${API_BASE_URL}${endpoint}`;
+        
+        const config = {
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers,
+            },
+            ...options,
+        };
+
+        try {
+            const response = await fetch(url, config);
+            return response;
+        } catch (error) {
+            console.error('API call failed:', error);
+            throw error;
+        }
+    };
+
     // Khởi tạo auth state khi app load
     useEffect(() => {
         const initializeAuth = async () => {
@@ -22,10 +46,9 @@ export const AuthProvider = ({ children }) => {
             
             if (storedToken) {
                 try {
-                    const response = await fetch('/api/auth/me', {
+                    const response = await apiCall('/api/auth/me', {
                         headers: {
                             'Authorization': `Bearer ${storedToken}`,
-                            'Content-Type': 'application/json'
                         }
                     });
 
@@ -64,11 +87,10 @@ export const AuthProvider = ({ children }) => {
     const logout = async () => {
         try {
             if (token) {
-                await fetch('/api/auth/logout', {
+                await apiCall('/api/auth/logout', {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
                     }
                 });
             }

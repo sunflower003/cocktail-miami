@@ -18,61 +18,64 @@ const userSchema = new mongoose.Schema({
     passwordHash: {
         type: String,
         required: [true, 'Password is required'],
-        minlength: [6, 'Password must be at least 6 characters']
+        select: false
     },
     phone: {
         type: String,
         required: [true, 'Phone number is required'],
         trim: true
     },
-    address: {
-        type: String,
-        default: '',
-        trim: true
-    },
     gender: {
         type: String,
-        enum: {
-            values: ['male', 'female', 'other'],
-            message: 'Gender must be male, female, or other'
-        },
+        enum: ['male', 'female', 'other'],
         required: [true, 'Gender is required']
     },
     age: {
         type: Number,
-        min: [0, 'Age cannot be negative'],
-        max: [150, 'Age cannot exceed 150']
+        min: [18, 'Age must be at least 18'],
+        max: [100, 'Age cannot exceed 100']
+    },
+    address: {
+        type: String,
+        trim: true,
+        maxlength: [500, 'Address cannot exceed 500 characters']
+    },
+    role: {
+        type: String,
+        enum: ['user', 'admin'],
+        default: 'user'
     },
     isEmailVerified: {
         type: Boolean,
         default: false
     },
-    verificationToken: {
-        type: String
-    },
-    verificationTokenExpires: {
-        type: Date
-    },
-    role: {
-        type: String,
-        enum: {
-            values: ['user', 'admin'],
-            message: 'Role must be user or admin'
-        },
-        default: 'user'
-    },
     isBlocked: {
         type: Boolean,
         default: false
     },
+    verificationToken: {
+        type: String,
+        select: false
+    },
+    verificationTokenExpires: {
+        type: Date,
+        select: false
+    },
     resetPasswordToken: {
-        type: String
+        type: String,
+        select: false
     },
     resetPasswordExpires: {
-        type: Date
+        type: Date,
+        select: false
     },
     lastLogin: {
-        type: Date
+        type: Date,
+        default: Date.now
+    },
+    profileImage: {
+        type: String,
+        default: null
     }
 }, {
     timestamps: true

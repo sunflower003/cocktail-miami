@@ -13,6 +13,7 @@ export default function Register() {
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [registrationResponse, setRegistrationResponse] = useState(null);
     const navigate = useNavigate();
 
     const handleChange = (e) => {
@@ -40,7 +41,9 @@ export default function Register() {
         setLoading(true);
 
         try {
-            const response = await fetch('/api/auth/register', {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+            
+            const response = await fetch(`${API_URL}/api/auth/register`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -55,15 +58,26 @@ export default function Register() {
             });
 
             const data = await response.json();
+            console.log('Registration response:', data);
 
-            if (response.ok) {
-                // Redirect to email verification page
-                navigate('/verify-email', { state: { email: formData.email } });
+            if (response.ok && data.success) {
+                setRegistrationResponse(data);
+                
+                // Chờ 3 giây để user đọc message
+                setTimeout(() => {
+                    navigate('/verify-email', { 
+                        state: { 
+                            email: formData.email
+                            // BỎ phần verificationCode - User phải vào email để lấy mã
+                        } 
+                    });
+                }, 3000);
             } else {
                 setError(data.message || 'Registration failed');
             }
         } catch (error) {
-            setError( error.message || 'Network error. Please try again.');
+            console.error('Registration error:', error);
+            setError('Network error. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -77,6 +91,22 @@ export default function Register() {
                 {error && (
                     <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
                         {error}
+                    </div>
+                )}
+
+                {registrationResponse && (
+                    <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+                        <p className="font-medium">{registrationResponse.message}</p>
+                        {registrationResponse.data.emailSent === false && (
+                            <div className="mt-3 p-3 bg-yellow-100 border border-yellow-300 rounded">
+                                <p className="text-sm text-yellow-800">
+                                    <strong>Note:</strong> Email could not be sent. You can use the "Resend Code" feature on the verification page.
+                                </p>
+                            </div>
+                        )}
+                        <p className="text-sm text-green-600 mt-2 text-center">
+                            Redirecting to verification page in 3 seconds...
+                        </p>
                     </div>
                 )}
 
@@ -160,7 +190,7 @@ export default function Register() {
                         <button 
                             type="submit"
                             className="w-full bg-black text-white py-3 rounded-md hover:bg-gray-800 transition disabled:opacity-50"
-                            disabled={loading}
+                            disabled={loading || registrationResponse}
                         >
                             {loading ? 'Creating Account...' : 'Sign up'}
                         </button>
