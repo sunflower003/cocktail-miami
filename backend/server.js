@@ -28,25 +28,35 @@ app.use(helmet({
 // Rate limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100 // limit each IP to 100 requests per windowMs
+    max: process.env.NODE_ENV === 'production' ? 100 : 1000 // Stricter trong production
 });
 app.use(limiter);
 
-// CORS configuration
+// CORS configuration - TỰ ĐỘNG CHUYỂN ĐỔI
 const corsOptions = {
     origin: function (origin, callback) {
         const allowedOrigins = [
             'http://localhost:5173',
             'http://localhost:3000',
-            process.env.FRONTEND_URL
+            process.env.FRONTEND_URL,
+            // Production domains sẽ được set qua env variables
+            process.env.PRODUCTION_FRONTEND_URL,
+            // Pattern cho Vercel preview deployments
+            /https:\/\/.*\.vercel\.app$/,
+            /https:\/\/.*\.netlify\.app$/
         ].filter(Boolean);
 
-        // Allow requests with no origin (mobile apps, etc.)
+        // Allow requests with no origin (mobile apps, Postman, etc.)
         if (!origin) return callback(null, true);
-        
-        if (allowedOrigins.indexOf(origin) !== -1) {
+
+        if (allowedOrigins.some(allowedOrigin => {
+            if (typeof allowedOrigin === 'string') return allowedOrigin === origin;
+            return allowedOrigin.test(origin);
+        })) {
             callback(null, true);
         } else {
+            console.log('CORS blocked origin:', origin);
+            console.log('Allowed origins:', allowedOrigins);
             callback(new Error('Not allowed by CORS'));
         }
     },
@@ -61,27 +71,30 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Data sanitization
+// Data sanitization against NoSQL query injection
 app.use(mongoSanitize());
+
+// Routes
+app.use('/api/auth', authRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
     res.json({
         success: true,
-        message: 'Server is running',
+        message: 'Cocktail Miami API is running',
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV
+        environment: process.env.NODE_ENV,
+        version: '1.0.0'
     });
 });
-
-// API routes
-app.use('/api/auth', authRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
     res.json({
-        message: 'Cocktail Miami API',
+        success: true,
+        message: 'Welcome to Cocktail Miami API',
         version: '1.0.0',
+        environment: process.env.NODE_ENV,
         endpoints: {
             health: '/api/health',
             auth: '/api/auth'
@@ -93,58 +106,57 @@ app.get('/', (req, res) => {
 app.use('*', (req, res) => {
     res.status(404).json({
         success: false,
-        message: 'Route not found'
+        message: `Route ${req.originalUrl} not found`
     });
 });
 
-// Global error handler
+// Error handling middleware
 app.use((err, req, res, next) => {
-    console.error('❌ Error:', err.stack);
+    console.error('Error:', err);
     
+    let error = { ...err };
+    error.message = err.message;
+
+    // CORS error
     if (err.message === 'Not allowed by CORS') {
         return res.status(403).json({
             success: false,
             message: 'CORS policy violation'
         });
     }
-    
-    res.status(500).json({
+
+    // Mongoose bad ObjectId
+    if (err.name === 'CastError') {
+        const message = 'Resource not found';
+        error = { message, statusCode: 404 };
+    }
+
+    // Mongoose duplicate key
+    if (err.code === 11000) {
+        const message = 'Duplicate field value entered';
+        error = { message, statusCode: 400 };
+    }
+
+    // Mongoose validation error
+    if (err.name === 'ValidationError') {
+        const message = Object.values(err.errors).map(val => val.message);
+        error = { message, statusCode: 400 };
+    }
+
+    res.status(error.statusCode || 500).json({
         success: false,
-        message: process.env.NODE_ENV === 'production' 
-            ? 'Internal server error' 
-            : err.message
+        message: error.message || 'Server Error',
+        ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
     });
 });
 
 const PORT = process.env.PORT || 5000;
 
-// Start server function
-const startServer = async () => {
-    try {
-        // Connect to database first
-        await connectDB();
-        
-        // Then start the server
-        const server = app.listen(PORT, '0.0.0.0', () => {
-            console.log(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
-            console.log(`📡 Health check: http://localhost:${PORT}/api/health`);
-        });
-
-        // Handle server shutdown
-        process.on('SIGTERM', () => {
-            console.log('SIGTERM received, shutting down gracefully');
-            server.close(() => {
-                console.log('Process terminated');
-            });
-        });
-
-    } catch (error) {
-        console.error('❌ Failed to start server:', error);
-        process.exit(1);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
+    console.log(`📡 Health check: http://localhost:${PORT}/api/health`);
+    
+    if (process.env.NODE_ENV === 'production') {
+        console.log(`🌐 Production URL: https://your-app-name.onrender.com`);
     }
-};
-
-// Start the server
-startServer();
-
-module.exports = app;
+});
