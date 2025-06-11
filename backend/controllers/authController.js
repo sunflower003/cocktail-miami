@@ -409,11 +409,103 @@ const logout = async (req, res) => {
     }
 };
 
+// @desc    Update user profile
+// @route   PUT /api/auth/update-profile
+// @access  Private
+const updateProfile = async (req, res) => {
+    try {
+        const { name, phone, address, gender, dateOfBirth } = req.body;
+        const userId = req.user.userId;
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        // Update only provided fields
+        if (name !== undefined) user.name = name;
+        if (phone !== undefined) user.phone = phone;
+        if (address !== undefined) user.address = address;
+        if (gender !== undefined) user.gender = gender;
+        if (dateOfBirth !== undefined) user.dateOfBirth = dateOfBirth;
+
+        await user.save();
+
+        res.json({
+            success: true,
+            message: 'Profile updated successfully',
+            data: {
+                user: user.toJSON()
+            }
+        });
+
+    } catch (error) {
+        console.error('Update profile error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+
+// @desc    Change password
+// @route   PUT /api/auth/change-password
+// @access  Private
+const changePassword = async (req, res) => {
+    try {
+        const { oldPassword, newPassword } = req.body;
+        const userId = req.user.userId;
+
+        const user = await User.findById(userId).select('+passwordHash');
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        // Verify old password
+        const isOldPasswordValid = await bcrypt.compare(oldPassword, user.passwordHash);
+        if (!isOldPasswordValid) {
+            return res.status(400).json({
+                success: false,
+                message: 'Current password is incorrect'
+            });
+        }
+
+        // Hash new password
+        const saltRounds = 12;
+        const newPasswordHash = await bcrypt.hash(newPassword, saltRounds);
+
+        user.passwordHash = newPasswordHash;
+        await user.save();
+
+        res.json({
+            success: true,
+            message: 'Password changed successfully'
+        });
+
+    } catch (error) {
+        console.error('Change password error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+
 module.exports = {
     register,
     login,
     verifyEmail,
     resendVerification,
     getMe,
-    logout
+    logout,
+    updateProfile,
+    changePassword
 };

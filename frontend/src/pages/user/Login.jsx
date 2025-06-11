@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+
 
 export default function Login() {
     const [formData, setFormData] = useState({
@@ -20,6 +21,11 @@ export default function Login() {
         });
         if (error) setError('');
     };
+
+    // Thêm useEffect để set document title
+    useEffect(() => {
+        document.title = 'Login - Cocktail Miami';
+    }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();

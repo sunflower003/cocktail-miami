@@ -5,7 +5,7 @@ import VideoHero from '../../components/Video';
 import Introduction from '../../components/Introduction';
 import BlogSection from '../../components/BlogSection';
 import GallerySection from '../../components/GallerySection';
-import Footer from '../../components/Footer';
+
 
 
 const Home = () => {
@@ -22,6 +22,7 @@ const Home = () => {
 
     // ScrollReveal chỉ chạy một lần khi component mount
     useEffect(() => {
+        document.title = 'Cocktail Miami';
         const sr = ScrollReveal({
             origin: 'bottom',
             distance: '50px',
@@ -75,7 +76,6 @@ const Home = () => {
             <Introduction />
             <BlogSection />
             <GallerySection />
-            <Footer />
         </div>  
     )
 };

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
+
 export default function VerifyEmail() {
     const [verificationCode, setVerificationCode] = useState('');
     const [loading, setLoading] = useState(false);
@@ -14,10 +15,11 @@ export default function VerifyEmail() {
     // API URL tự động chuyển đổi
     const API_URL = import.meta.env.VITE_API_URL || 
                    (import.meta.env.PROD 
-                       ? 'https://your-backend-name.onrender.com' // Thay bằng URL thật
+                       ? 'https://cocktail-miami-api.onrender.com' // Thay bằng URL thật
                        : 'http://localhost:5000');
 
     useEffect(() => {
+        document.title = 'Verify Email - Cocktail Miami';
         if (!email) {
             navigate('/register');
         }

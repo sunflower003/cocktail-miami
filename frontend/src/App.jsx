@@ -5,6 +5,7 @@ import Home from './pages/user/Home.jsx';
 import Login from './pages/user/Login.jsx';
 import Register from './pages/user/Register.jsx';
 import VerifyEmail from './pages/user/VerifyEmail.jsx';
+import AccountSettings from './pages/user/AccountSettings.jsx';
 import './App.css';
 
 function App() {
@@ -16,6 +17,8 @@ function App() {
           <Route path="login" element={<Login />} />
           <Route path="register" element={<Register />} />
           <Route path="verify-email" element={<VerifyEmail />} />
+          <Route path="account-settings" element={<AccountSettings />} />
+          {/* Add more routes as needed */}
         </Route>
       </Routes>
     </AuthProvider>

@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }) => {
     // API base URL - TỰ ĐỘNG CHUYỂN ĐỔI dựa trên environment
     const API_BASE_URL = import.meta.env.VITE_API_URL || 
                         (import.meta.env.PROD 
-                            ? 'https://your-backend-name.onrender.com' // Thay bằng URL Render thật
+                            ? 'https://cocktail-miami-api.onrender.com' // Thay bằng URL Render thật
                             : 'http://localhost:5000');
 
     console.log('🌐 Current Environment:', import.meta.env.MODE);
