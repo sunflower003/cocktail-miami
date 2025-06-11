@@ -38,22 +38,34 @@ app.use(limiter);
 const corsOptions = {
     origin: function (origin, callback) {
         const allowedOrigins = [
+            // Development
             'http://localhost:5173',
             'http://localhost:3000',
             'http://127.0.0.1:5173',
             'http://127.0.0.1:3000',
-            process.env.FRONTEND_URL,
-            // Production domains
-            'https://cocktail-miami-api.onrender.com',
+            
+            // Production - THÊM DOMAINS THẬT CỦA BẠN
             'https://cocktail-miami.vercel.app',
-            // Pattern for subdomains
-            /https:\/\/.*\.vercel\.app$/,
-            /https:\/\/.*\.render\.com$/,
-            /https:\/\/.*\.onrender\.com$/
+            'https://cocktail-miami.onrender.com',
+            
+            // Environment variables
+            process.env.FRONTEND_URL,
+            process.env.FRONTEND_URL_PRODUCTION,
+            
+            // Pattern for preview deployments
+            /^https:\/\/cocktail-miami.*\.vercel\.app$/,
+            /^https:\/\/.*\.onrender\.com$/,
+            
         ].filter(Boolean);
 
+        console.log('🌐 CORS Check - Origin:', origin);
+        console.log('🌐 CORS Check - Allowed:', allowedOrigins);
+
         // Allow requests with no origin (mobile apps, Postman, etc.)
-        if (!origin) return callback(null, true);
+        if (!origin) {
+            console.log('✅ CORS: No origin - allowing');
+            return callback(null, true);
+        }
 
         // Check if origin is allowed
         const isAllowed = allowedOrigins.some(allowedOrigin => {
@@ -64,10 +76,12 @@ const corsOptions = {
         });
 
         if (isAllowed) {
+            console.log('✅ CORS: Origin allowed');
             callback(null, true);
         } else {
-            console.log('CORS blocked origin:', origin);
-            console.log('Allowed origins:', allowedOrigins);
+            console.log('❌ CORS: Origin blocked');
+            console.log('❌ Blocked origin:', origin);
+            console.log('❌ Allowed origins:', allowedOrigins);
             callback(new Error('Not allowed by CORS'));
         }
     },
@@ -80,12 +94,12 @@ const corsOptions = {
         'Accept',
         'Origin'
     ],
-    optionsSuccessStatus: 200 // Some legacy browsers choke on 204
+    optionsSuccessStatus: 200
 };
 
 app.use(cors(corsOptions));
 
-// Handle preflight requests
+// Handle preflight requests explicitly
 app.options('*', cors(corsOptions));
 
 // Body parsing middleware
