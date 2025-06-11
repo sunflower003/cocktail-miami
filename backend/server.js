@@ -11,6 +11,8 @@ const connectDB = require('./config/db');
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
+const categoryRoutes = require('./routes/categoryRoutes');
+const productRoutes = require('./routes/productRoutes');
 
 // Load environment variables trước
 dotenv.config();
@@ -38,11 +40,13 @@ const corsOptions = {
         const allowedOrigins = [
             'http://localhost:5173',
             'http://localhost:3000',
+            'http://127.0.0.1:5173',
+            'http://127.0.0.1:3000',
             process.env.FRONTEND_URL,
-            // Thêm domain Render và Vercel
+            // Production domains
             'https://cocktail-miami-api.onrender.com',
             'https://cocktail-miami.vercel.app',
-            // Pattern cho các subdomain
+            // Pattern for subdomains
             /https:\/\/.*\.vercel\.app$/,
             /https:\/\/.*\.render\.com$/,
             /https:\/\/.*\.onrender\.com$/
@@ -51,10 +55,15 @@ const corsOptions = {
         // Allow requests with no origin (mobile apps, Postman, etc.)
         if (!origin) return callback(null, true);
 
-        if (allowedOrigins.some(allowedOrigin => {
-            if (typeof allowedOrigin === 'string') return allowedOrigin === origin;
+        // Check if origin is allowed
+        const isAllowed = allowedOrigins.some(allowedOrigin => {
+            if (typeof allowedOrigin === 'string') {
+                return allowedOrigin === origin;
+            }
             return allowedOrigin.test(origin);
-        })) {
+        });
+
+        if (isAllowed) {
             callback(null, true);
         } else {
             console.log('CORS blocked origin:', origin);
@@ -63,11 +72,21 @@ const corsOptions = {
         }
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: [
+        'Content-Type', 
+        'Authorization', 
+        'X-Requested-With',
+        'Accept',
+        'Origin'
+    ],
+    optionsSuccessStatus: 200 // Some legacy browsers choke on 204
 };
 
 app.use(cors(corsOptions));
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -78,6 +97,8 @@ app.use(mongoSanitize());
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/products', productRoutes);
 
 // Health check endpoint - ĐẶT TRƯỚC CÁC MIDDLEWARE KHÁC
 app.get('/health', (req, res) => {

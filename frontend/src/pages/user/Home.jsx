@@ -33,7 +33,7 @@ const Home = () => {
             easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
             reset: false,
             cleanup: false,
-            viewFactor: 0.5
+            viewFactor: 0.8
         });
 
         sr.reveal('.hero-title-reveal');
@@ -44,10 +44,6 @@ const Home = () => {
         sr.reveal('.introduce-text', {origin: 'left'});
         sr.reveal('.blog-section-title', {origin: 'left'});
         sr.reveal('.blog-section-icon', {origin: 'right'});
-        sr.reveal('.logo-footer');
-        sr.reveal('.link-ico', {delay: 300});
-        sr.reveal('.button-footer', {delay: 600});
-
         return () => {
             sr.destroy();
         };
