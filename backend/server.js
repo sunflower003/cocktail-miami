@@ -39,11 +39,13 @@ const corsOptions = {
             'http://localhost:5173',
             'http://localhost:3000',
             process.env.FRONTEND_URL,
-            // Production domains sẽ được set qua env variables
-            process.env.PRODUCTION_FRONTEND_URL,
-            // Pattern cho Vercel preview deployments
+            // Thêm domain Render và Vercel
+            'https://cocktail-miami-api.onrender.com',
+            'https://cocktail-miami.vercel.app',
+            // Pattern cho các subdomain
             /https:\/\/.*\.vercel\.app$/,
-            /https:\/\/.*\.netlify\.app$/
+            /https:\/\/.*\.render\.com$/,
+            /https:\/\/.*\.onrender\.com$/
         ].filter(Boolean);
 
         // Allow requests with no origin (mobile apps, Postman, etc.)
@@ -77,28 +79,22 @@ app.use(mongoSanitize());
 // Routes
 app.use('/api/auth', authRoutes);
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-    res.json({
+// Health check endpoint - ĐẶT TRƯỚC CÁC MIDDLEWARE KHÁC
+app.get('/health', (req, res) => {
+    res.status(200).json({
         success: true,
-        message: 'Cocktail Miami API is running',
+        message: 'Server is healthy',
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV,
-        version: '1.0.0'
+        uptime: process.uptime()
     });
 });
 
-// Root endpoint
 app.get('/', (req, res) => {
-    res.json({
+    res.status(200).json({
         success: true,
-        message: 'Welcome to Cocktail Miami API',
+        message: 'Cocktail Miami API is running',
         version: '1.0.0',
-        environment: process.env.NODE_ENV,
-        endpoints: {
-            health: '/api/health',
-            auth: '/api/auth'
-        }
+        environment: process.env.NODE_ENV
     });
 });
 
@@ -152,11 +148,25 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 
+// QUAN TRỌNG: Bind to 0.0.0.0 thay vì localhost
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
-    console.log(`📡 Health check: http://localhost:${PORT}/api/health`);
+    console.log(`📡 Health check: http://0.0.0.0:${PORT}/api/health`);
     
     if (process.env.NODE_ENV === 'production') {
-        console.log(`🌐 Production URL: https://your-app-name.onrender.com`);
+        console.log(`🌐 Production URL: https://cocktail-miami-api.onrender.com`);
     }
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('SIGTERM received. Shutting down gracefully...');
+    server.close(() => {
+        console.log('Process terminated');
+    });
+});
+
+process.on('SIGINT', () => {
+    console.log('SIGINT received. Shutting down gracefully...');
+    process.exit(0);
 });
