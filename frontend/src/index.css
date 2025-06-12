@@ -80,6 +80,10 @@ a {
   transition: .3s;
 }
 
+.link-cart {
+  font-size: 18px;
+}
+
 .link-resp:hover {
   color: var(--grey);
 }
@@ -987,5 +991,57 @@ a {
 
 .hehehe {
   border-bottom: 1px solid var(--grey-light);
+}
+
+/* Header Cart Counter Styles - Thêm vào cuối file */
+.header-links .link span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.header-links .link span span {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: middle !important;
+}
+
+/* Mobile cart counter */
+.link-resp span {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100%;
+}
+
+.link-resp span span {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+}
+
+/* Ensure counter doesn't inherit any flex column styles */
+.header-links .link,
+.link-resp {
+  display: block !important;
+}
+
+.header-links .link > span,
+.link-resp > span {
+  display: inline-flex !important;
+  align-items: center !important;
+  flex-direction: row !important;
+}
+
+/* Force inline display for cart counter */
+.bg-red-500.text-white.text-xs.rounded-full {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  vertical-align: middle !important;
 }
 

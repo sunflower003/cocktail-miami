@@ -1,11 +1,13 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useCart } from '../contexts/CartContext';
 
 const Header = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
     const { user, logout, isAuthenticated, loading } = useAuth();
+    const { cartCount } = useCart();
     const navigate = useNavigate();
     const dropdownRef = useRef(null);
 
@@ -101,8 +103,18 @@ const Header = () => {
                     <Link to="/" className="link text-blackCus font-medium hover:text-gray-600 transition">
                         Tasting Room
                     </Link>
-                    <Link to="/" className="link text-blackCus font-medium hover:text-gray-600 transition">
-                        Cart
+                    
+                    {/* CART LINK VỚI COUNTER - SỬA LẠI */}
+                    <Link to="/cart" className="link text-blackCus font-medium hover:text-gray-600 transition relative">
+                        <span className="flex items-center gap-1">
+                            Cart
+                            {/* CART COUNTER BADGE - SỬA POSITION */}
+                            {cartCount > 0 && (
+                                <span className="bg-green-100 text-green-800 text-xs rounded-full min-w-[18px] h-[18px] flex items-center justify-center font-bold px-1 ml-1" style={{ fontSize: '10px', lineHeight: '1' }}>
+                                    {cartCount > 99 ? '99+' : cartCount}
+                                </span>
+                            )}
+                        </span>
                     </Link>
                     
                     {/* Authentication Section */}
@@ -195,6 +207,9 @@ const Header = () => {
                                             <span className="font-medium">My Orders</span>
                                         </Link>
 
+                                        
+                                        
+
                                         <Link 
                                             to="/wishlist" 
                                             className="flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-gray-50 transition-colors duration-150"
@@ -262,9 +277,7 @@ const Header = () => {
                         <Link to="/" className="link-resp text-blackCus font-medium" onClick={closeMenu}>
                             Tasting Room
                         </Link>
-                        <Link to="/" className="link-resp text-blackCus font-medium" onClick={closeMenu}>
-                            Cart
-                        </Link>
+                       
                         
                         {/* Mobile Auth Section - Enhanced */}
                         {loading ? (
@@ -302,7 +315,17 @@ const Header = () => {
                                         Admin Panel
                                     </Link>
                                 )}
-                                
+                                <Link to="/cart" className="link-cart text-blackCus font-medium hover:text-gray-600 transition relative" onClick={closeMenu}>
+                                    <span className="flex items-center gap-1">
+                                        Cart
+                                        {/* CART COUNTER BADGE - SỬA POSITION */}
+                                        {cartCount > 0 && (
+                                            <span className="bg-green-100 text-green-800 text-xs rounded-full min-w-[18px] h-[18px] flex items-center justify-center font-bold px-1 ml-1" style={{ fontSize: '10px', lineHeight: '1' }}>
+                                                {cartCount > 99 ? '99+' : cartCount}
+                                            </span>
+                                        )}
+                                    </span>
+                                </Link>
                                 <Link 
                                     to="/orders" 
                                     className="link-resp text-blackCus font-medium block py-2"

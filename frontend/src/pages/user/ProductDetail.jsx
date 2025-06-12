@@ -15,8 +15,32 @@ export default function ProductDetail() {
   const [error, setError] = useState('');
   const [addingToCart, setAddingToCart] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
+  // THÊM CÁC STATE CHO NOTIFICATION
+  const [notification, setNotification] = useState({
+    show: false,
+    type: '', // 'success' or 'error'
+    message: ''
+  });
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+  // THÊM FUNCTION HIỂN THỊ NOTIFICATION
+  const showNotification = (type, message) => {
+    setNotification({
+      show: true,
+      type,
+      message
+    });
+
+    // Tự động ẩn sau 4 giây
+    setTimeout(() => {
+      setNotification({
+        show: false,
+        type: '',
+        message: ''
+      });
+    }, 4000);
+  };
 
   // Fetch product data
   useEffect(() => {
@@ -45,7 +69,7 @@ export default function ProductDetail() {
     }
   }, [id, API_URL]);
 
-  // Handle add to cart
+  // Handle add to cart - CẬP NHẬT VỚI NOTIFICATION
   const handleAddToCart = async () => {
     if (!user) {
       navigate('/login', { state: { from: `/products/${id}` } });
@@ -71,14 +95,16 @@ export default function ProductDetail() {
       const result = await response.json();
       
       if (result.success) {
-        // Show success message or update cart context
-        console.log('Added to cart successfully');
-        // You can add a toast notification here
+        // HIỂN THỊ THÔNG BÁO THÀNH CÔNG
+        showNotification('success', `Added ${quantity} ${product.name} to cart successfully!`);
       } else {
-        console.error('Failed to add to cart:', result.message);
+        // HIỂN THỊ THÔNG BÁO LỖI
+        showNotification('error', result.message || 'Failed to add to cart');
       }
     } catch (error) {
       console.error('Error adding to cart:', error);
+      // HIỂN THỊ THÔNG BÁO LỖI NETWORK
+      showNotification('error', 'Network error. Please check your connection and try again.');
     } finally {
       setAddingToCart(false);
     }
@@ -129,6 +155,51 @@ export default function ProductDetail() {
 
   return (
     <div className="min-h-screen">
+      {/* TOAST NOTIFICATION */}
+      {notification.show && (
+        <div className={`fixed top-4 right-4 z-50 max-w-sm w-full transform transition-all duration-300 ease-in-out ${
+          notification.show ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
+        }`}>
+          <div className={`rounded-lg shadow-lg p-4 ${
+            notification.type === 'success' 
+              ? 'bg-green-500 text-white' 
+              : 'bg-red-500 text-white'
+          }`}>
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                {notification.type === 'success' ? (
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                )}
+              </div>
+              <div className="ml-3 w-0 flex-1">
+                <p className="text-sm font-medium">
+                  {notification.type === 'success' ? 'Success!' : 'Error!'}
+                </p>
+                <p className="mt-1 text-sm opacity-90">
+                  {notification.message}
+                </p>
+              </div>
+              <div className="ml-4 flex-shrink-0 flex">
+                <button
+                  onClick={() => setNotification({ show: false, type: '', message: '' })}
+                  className="rounded-md inline-flex text-white hover:opacity-75 focus:outline-none"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Breadcrumb */}
       <div className="border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -242,8 +313,6 @@ export default function ProductDetail() {
 
             {/* Description */}
             <div className="space-y-4">
-  
-              
               {product.description && (
                 <div className="space-y-2">
                   <h3 className="text-lg font-semibold text-gray-900">About</h3>
@@ -286,7 +355,6 @@ export default function ProductDetail() {
                     <span className="text-gray-900">{product.region}</span>
                   </div>
                 )}
-                
               </div>
             </div>
 
@@ -354,7 +422,19 @@ export default function ProductDetail() {
                       disabled={addingToCart}
                       className="w-full border-2 border-black text-black py-4 rounded-xl font-medium text-lg hover:bg-black hover:text-white transition-colors disabled:opacity-50"
                     >
-                      {addingToCart ? 'Adding...' : 'Add to Cart'}
+                      {addingToCart ? (
+                        <div className="flex items-center justify-center space-x-2">
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-current"></div>
+                          <span>Adding to Cart...</span>
+                        </div>
+                      ) : (
+                        <>
+                          <svg className="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6.5-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6" />
+                          </svg>
+                          Add to Cart
+                        </>
+                      )}
                     </button>
                   </>
                 )}
@@ -379,7 +459,6 @@ export default function ProductDetail() {
           </div>
         </div>
         
-
         {/* Product Reviews Section - Full width */}
         <div className="mt-12">
           <ProductReviews productId={product._id} />

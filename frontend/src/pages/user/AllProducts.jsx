@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronUp, Search, Filter, Grid, List } from 'lucide-react';
+import { ChevronDown, ChevronUp, Search, Filter } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import WishlistButton from '../../components/WishlistButton';
 
 const AllProducts = () => {
   const [products, setProducts] = useState([]);
@@ -8,7 +9,6 @@ const AllProducts = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [expandedFilters, setExpandedFilters] = useState({});
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [sortBy, setSortBy] = useState('name'); // 'name', 'price', 'newest'
@@ -126,7 +126,7 @@ const AllProducts = () => {
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
       <div className="relative flex items-center justify-center lg:h-[400px] h-[200px]">
-        <div className="relative allproducts-hero w-1/2 h-full flex items-center justify-cente lg:px-16 px-6">
+        <div className="relative allproducts-hero w-1/2 h-full flex items-center justify-center lg:px-16 px-6">
           <div className="text-left">
             <h1 className="text-2xl lg:text-4xl font-bold mb-6">
               Our Cocktails
@@ -290,26 +290,10 @@ const AllProducts = () => {
                   <option value="price-desc">Price: High to Low</option>
                   <option value="newest">Newest First</option>
                 </select>
-
-                {/* View Mode */}
-                <div className="flex border border-gray-200 rounded-lg overflow-hidden">
-                  <button
-                    onClick={() => setViewMode('grid')}
-                    className={`p-2 ${viewMode === 'grid' ? 'bg-green-100 text-green-800' : 'bg-white text-gray-600 hover:bg-gray-50'} transition-colors`}
-                  >
-                    <Grid className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => setViewMode('list')}
-                    className={`p-2 ${viewMode === 'list' ? 'bg-green-100 text-green-800' : 'bg-white text-gray-600 hover:bg-gray-50'} transition-colors`}
-                  >
-                    <List className="w-5 h-5" />
-                  </button>
-                </div>
               </div>
             </div>
 
-            {/* Products Grid/List */}
+            {/* Products Grid */}
             {error ? (
               <div className="text-center py-16">
                 <p className="text-red-600 text-lg">{error}</p>
@@ -329,15 +313,11 @@ const AllProducts = () => {
                 <p className="text-gray-500">Try adjusting your filters or search terms</p>
               </div>
             ) : (
-              <div className={`${viewMode === 'grid' 
-                ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6' 
-                : 'space-y-6'
-              }`}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
                 {currentProducts.map((product) => (
                   <ProductCard 
                     key={product._id} 
-                    product={product} 
-                    viewMode={viewMode}
+                    product={product}
                   />
                 ))}
               </div>
@@ -405,8 +385,8 @@ const AllProducts = () => {
   );
 };
 
-// Product Card Component
-const ProductCard = ({ product, viewMode }) => {
+// Product Card Component (Grid only)
+const ProductCard = ({ product }) => {
   const productIdentifier = product.slug || product._id;
   
   const handleBuyNow = (e) => {
@@ -415,67 +395,6 @@ const ProductCard = ({ product, viewMode }) => {
     console.log('Buy now:', product.name);
     // Add to cart logic here
   };
-  
-  if (viewMode === 'list') {
-    return (
-      <Link 
-        to={`/products/${productIdentifier}`}
-        className="block rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
-      >
-        <div className="flex flex-col sm:flex-row">
-          <div className="sm:w-48 h-48 sm:h-auto flex items-center justify-center p-4">
-            <img
-              src={product.images?.[0]?.url || '/img/default-product.png'}
-              alt={product.name}
-              className="w-full h-full object-contain"
-              onError={(e) => {
-                e.target.src = '/img/default-product.png';
-              }}
-            />
-          </div>
-          <div className="flex-1 p-6 flex flex-col justify-between">
-            <div>
-              <div className="flex items-start justify-between mb-2">
-                <h3 className="font-semibold text-lg text-gray-900 leading-tight">
-                  {product.name}
-                </h3>
-                <span className="text-2xl font-bold text-green-800 ml-4">
-                  ${product.price}
-                </span>
-              </div>
-              <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                {product.subDescription || product.description}
-              </p>
-              <div className="flex items-center gap-4 text-sm text-gray-500">
-                <span className="bg-gray-100 px-3 py-1 rounded-full">
-                  {product.category?.name || 'Uncategorized'}
-                </span>
-                {product.abv && (
-                  <span>ABV: {product.abv}%</span>
-                )}
-                {product.country && (
-                  <span>{product.country}</span>
-                )}
-              </div>
-              
-              {/* Buy Now Button for List View */}
-              <button
-                onClick={handleBuyNow}
-                disabled={product.stock === 0}
-                className={`mt-4 w-full py-2 px-4 rounded-lg font-medium ${
-                  product.stock === 0
-                    ? 'bg-gray-400 text-white cursor-not-allowed'
-                    : 'bg-black text-white hover:bg-gray-800'
-                }`}
-              >
-                {product.stock === 0 ? 'Out of Stock' : 'Buy Now'}
-              </button>
-            </div>
-          </div>
-        </div>
-      </Link>
-    );
-  }
 
   return (
     <div className="group rounded-lg border border-gray-200 overflow-hidden">
@@ -494,6 +413,13 @@ const ProductCard = ({ product, viewMode }) => {
               Featured
             </div>
           )}
+          {/* Wishlist button in top-right corner */}
+          <div className="absolute top-4 right-4 z-10">
+            <WishlistButton 
+              productId={product._id}
+              size="md"
+            />
+          </div>
         </div>
       </Link>
       
@@ -513,26 +439,21 @@ const ProductCard = ({ product, viewMode }) => {
             {product.stock <= 5 && product.stock > 0 && (
               <span className="text-orange-600 font-medium">Low Stock</span>
             )}
-            {product.stock === 0 && (
-              <span className="text-red-600 font-medium">Out of Stock</span>
-            )}
           </div>
         </div>
-        
-       
-        
       </div>
+      
       <button
-          onClick={handleBuyNow}
-          disabled={product.stock === 0}
-          className={`w-full py-3 px-4 font-medium text-sm ${
-            product.stock === 0
-              ? 'bg-gray-400 text-white cursor-not-allowed'
-              : 'bg-black text-white hover:bg-gray-800 transition-all duration-300'
-          }`}
-        >
-          {product.stock === 0 ? 'Out of Stock' : 'Buy Now'}
-        </button>
+        onClick={handleBuyNow}
+        disabled={product.stock === 0}
+        className={`w-full py-3 px-4 font-medium text-sm ${
+          product.stock === 0
+            ? 'bg-gray-400 text-white cursor-not-allowed'
+            : 'bg-black text-white hover:bg-gray-800 transition-all duration-300'
+        }`}
+      >
+        {product.stock === 0 ? 'Out of Stock' : 'Buy Now'}
+      </button>
     </div>
   );
 };
