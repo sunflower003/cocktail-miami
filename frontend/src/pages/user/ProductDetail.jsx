@@ -167,7 +167,7 @@ export default function ProductDetail() {
                 }}
               />
               {product.isFeatured && (
-                <div className="absolute top-4 left-4 bg-gradient-to-r from-green-400 to-green-500 text-black px-3 py-1 rounded-full text-sm font-medium">
+                <div className="absolute top-4 left-4 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
                   Featured
                 </div>
               )}

@@ -18,7 +18,9 @@ import CreateProduct from './pages/admin/CreateProduct.jsx';
 import EditProduct from './pages/admin/EditProduct.jsx';
 import CategoryManagement from './pages/admin/CategoryManagement.jsx';
 import ProductDetail from './pages/user/ProductDetail.jsx';
-
+import AllProducts from './pages/user/AllProducts.jsx';
+import UserManagement from './pages/admin/UserManagement.jsx';
+import UserDetail from './pages/admin/UserDetail.jsx';
 import './App.css';
 
 function App() {
@@ -33,6 +35,7 @@ function App() {
           <Route path="verify-email" element={<VerifyEmail />} />
           <Route path="account-settings" element={<AccountSettings />} />
           <Route path="products/:id" element={<ProductDetail />} />
+          <Route path="products" element={<AllProducts />} />
         </Route>
 
         {/* Admin Routes */}
@@ -47,6 +50,8 @@ function App() {
           <Route path="products/create" element={<CreateProduct />} />
           <Route path="products/edit/:id" element={<EditProduct />} />
           <Route path="categories" element={<CategoryManagement />} />
+          <Route path="users" element={<UserManagement />} />
+          <Route path="users/:id" element={<UserDetail />} />
         </Route>
       </Routes>
     </AuthProvider>

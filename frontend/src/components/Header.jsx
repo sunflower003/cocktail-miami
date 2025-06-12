@@ -72,12 +72,15 @@ const Header = () => {
         return user.email[0].toUpperCase();
     };
 
+    // Check if user is admin
+    const isAdmin = user?.role === 'admin';
+
     return (
         <>
             <header className="header-div flex justify-between items-center w-full py-16 px-32">
                 {/* Left Navigation Links */}
                 <div className='header-links flex items-center justify-center gap-20'>
-                    <Link to="/" className="link text-blackCus font-medium hover:text-gray-600 transition">
+                    <Link to="/products" className="link text-blackCus font-medium hover:text-gray-600 transition">
                         Our Cocktails
                     </Link>
                     <Link to="/" className="link text-blackCus font-medium hover:text-gray-600 transition">
@@ -148,15 +151,39 @@ const Header = () => {
                                             <div className='text-left'> 
                                                 <h3 className="font-semibold text-gray-900">{user?.name || 'User'}</h3>
                                                 <p className="text-sm text-gray-600">{user?.email}</p>
-                                                <span className="inline-block px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full mt-1">
-                                                    {user?.isEmailVerified ? 'Verified' : 'Unverified'}
-                                                </span>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <span className="inline-block px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full">
+                                                        {user?.isEmailVerified ? 'Verified' : 'Unverified'}
+                                                    </span>
+                                                    {isAdmin && (
+                                                        <span className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full">
+                                                            Admin
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Menu Items */}
                                     <div className="py-2">
+                                        {/* Admin Panel - Only show for admin users */}
+                                        {isAdmin && (
+                                            <>
+                                                <Link 
+                                                    to="/admin/dashboard" 
+                                                    className="flex items-center gap-3 px-6 py-3 text-blue-700 hover:bg-blue-50 transition-colors duration-150"
+                                                    onClick={() => setShowUserMenu(false)}
+                                                >
+                                                    <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                                    </svg>
+                                                    <span className="font-medium">Admin Panel</span>
+                                                </Link>
+                                                <div className="border-t border-gray-200 my-2"></div>
+                                            </>
+                                        )}
+
                                         <Link 
                                             to="/orders" 
                                             className="flex items-center gap-3 px-6 py-3 text-gray-700 hover:bg-gray-50 transition-colors duration-150"
@@ -223,7 +250,7 @@ const Header = () => {
                 <aside className={`menu-header absolute top-0 right-0 h-screen bg-white shadow-lg hidden ${isMenuOpen ? 'active' : ''}`}>
                     <i className="ri-close-line absolute top-0 right-0 p-4" onClick={closeMenu}></i>
                     <div className='flex flex-col text-left p-4 gap-6 mt-16'>
-                        <Link to="/" className="link-resp text-blackCus font-medium" onClick={closeMenu}>
+                        <Link to="/products" className="link-resp text-blackCus font-medium" onClick={closeMenu}>
                             Our Cocktails
                         </Link>
                         <Link to="/" className="link-resp text-blackCus font-medium" onClick={closeMenu}>
@@ -257,8 +284,25 @@ const Header = () => {
                                         <div className="text-sm text-gray-600">
                                             {user?.email}
                                         </div>
+                                        {isAdmin && (
+                                            <div className="text-xs text-blue-600 font-medium">
+                                                Admin
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
+                                
+                                {/* Admin Panel for Mobile */}
+                                {isAdmin && (
+                                    <Link 
+                                        to="/admin/dashboard" 
+                                        className="link-resp text-blue-600 font-medium block py-2 border-b border-gray-200 mb-2"
+                                        onClick={closeMenu}
+                                    >
+                                        Admin Panel
+                                    </Link>
+                                )}
+                                
                                 <Link 
                                     to="/orders" 
                                     className="link-resp text-blackCus font-medium block py-2"

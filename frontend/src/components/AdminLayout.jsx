@@ -29,7 +29,7 @@ export default function AdminLayout() {
         <div className="min-h-screen bg-gray-50 flex">
             {/* Sidebar */}
             <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                <div className="flex items-center justify-center h-16 bg-black text-white">
+                <div className="flex items-center justify-center h-16 text-black">
                     <h1 className="text-xl font-bold">Admin Panel</h1>
                 </div>
                 

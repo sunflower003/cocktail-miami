@@ -97,7 +97,7 @@ export default function AccountSettings() {
         setError(data.message || 'Failed to update profile');
       }
     } catch (error) {
-      setError('Network error. Please try again.');
+      setError(error.massage || 'Network error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -148,7 +148,7 @@ export default function AccountSettings() {
         setError(data.message || 'Failed to change password');
       }
     } catch (error) {
-      setError('Network error. Please try again.');
+      setError(error.massage || 'Network error. Please try again.');
     } finally {
       setLoading(false);
     }
