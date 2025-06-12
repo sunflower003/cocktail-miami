@@ -3,7 +3,7 @@ const Product = require('../models/Product.js');
 
 // @desc    Get user's wishlist
 // @route   GET /api/wishlist
-// @access  Private
+// @access  Private d
 const getWishlist = async (req, res) => {
     try {
         const wishlistItems = await Wishlist.find({ userId: req.user.userId })
