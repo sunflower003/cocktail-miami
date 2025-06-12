@@ -1,5 +1,5 @@
-const Wishlist = require('../models/Wishlist');
-const Product = require('../models/Product');
+const Wishlist = require('../models/Wishlist.js');
+const Product = require('../models/Product.js');
 
 // @desc    Get user's wishlist
 // @route   GET /api/wishlist
