@@ -14,6 +14,8 @@ const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes'); // ADD THIS LINE
 const categoryRoutes = require('./routes/categoryRoutes');
 const productRoutes = require('./routes/productRoutes');
+const wishlistRoutes = require('./routes/wishlistRoutes');
+const cartRoutes = require('./routes/cartRoutes');
 
 // Load environment variables trước
 dotenv.config();
@@ -112,9 +114,11 @@ app.use(mongoSanitize());
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/admin', adminRoutes); // ADD THIS LINE
+app.use('/api/admin', adminRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/cart', cartRoutes); // ADD THIS LINE
 
 // Health check endpoint - ĐẶT TRƯỚC CÁC MIDDLEWARE KHÁC
 app.get('/health', (req, res) => {
