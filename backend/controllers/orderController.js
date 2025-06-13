@@ -106,10 +106,7 @@ const clearUserCart = async (userId) => {
 // ✅ MAIN CONTROLLER FUNCTIONS
 const handlePayOSWebhook = async (req, res) => {
     try {
-        console.log('=== PAYOS WEBHOOK DEBUG START ===');
-        console.log('📡 Time:', new Date().toISOString());
-        console.log('📡 Raw Body:', JSON.stringify(req.body, null, 2));
-        
+        // ✅ Giảm logging, tăng tốc processing
         const webhookData = req.body;
         let orderCode, status, transactionId;
         
@@ -125,73 +122,45 @@ const handlePayOSWebhook = async (req, res) => {
             
             transactionId = data.reference || data.paymentLinkId;
         } else {
-            return res.status(200).json({
-                success: true,
-                message: 'Unknown format but acknowledged'
-            });
+            return res.status(200).json({ success: true });
         }
-
-        console.log('🔍 Extracted data:', { orderCode, status, transactionId });
 
         if (!orderCode) {
-            return res.status(200).json({
-                success: true,
-                message: 'No orderCode but acknowledged'
-            });
+            return res.status(200).json({ success: true });
         }
 
-        const order = await Order.findOne({ 
-            'paymentInfo.payosOrderCode': orderCode.toString() 
-        });
+        // ✅ Sử dụng findOneAndUpdate để atomic operation
+        const updateData = status === 'PAID' ? {
+            isPaid: true,
+            paidAt: new Date(),
+            status: 'processing',
+            'paymentInfo.payosStatus': 'PAID',
+            'paymentInfo.payosTransactionId': transactionId
+        } : {
+            status: 'cancelled',
+            'paymentInfo.payosStatus': 'FAILED'
+        };
 
-        if (!order) {
-            console.error('❌ Order not found for orderCode:', orderCode);
-            return res.status(200).json({
-                success: true,
-                message: 'Order not found but acknowledged'
-            });
-        }
+        const order = await Order.findOneAndUpdate(
+            { 
+                'paymentInfo.payosOrderCode': orderCode.toString(),
+                isPaid: false // Chỉ update nếu chưa paid
+            },
+            updateData,
+            { new: true }
+        );
 
-        console.log('📦 Found order:', order._id);
-
-        if (status === 'PAID') {
-            console.log('✅ Processing PayOS payment success...');
-            
-            if (order.isPaid) {
-                return res.status(200).json({
-                    success: true,
-                    message: 'Order already paid'
-                });
-            }
-            
-            order.isPaid = true;
-            order.paidAt = new Date();
-            order.status = 'processing';
-            order.paymentInfo.payosStatus = 'PAID';
-            order.paymentInfo.payosTransactionId = transactionId;
-
+        if (order && status === 'PAID') {
+            // ✅ Update stock sau khi đã update order
             await updateProductStock(order.items);
-            await order.save();
-            
-            console.log(`✅ Order ${order._id} updated to PAID successfully`);
-        } else {
-            console.log('❌ Processing payment failure...');
-            order.status = 'cancelled';
-            order.paymentInfo.payosStatus = 'FAILED';
-            await order.save();
+            console.log(`✅ Order ${order._id} processed successfully`);
         }
 
-        res.status(200).json({ 
-            success: true,
-            message: 'PayOS webhook processed successfully'
-        });
+        res.status(200).json({ success: true });
 
     } catch (error) {
         console.error('❌ PayOS webhook error:', error);
-        res.status(200).json({
-            success: true,
-            message: 'Webhook error but acknowledged'
-        });
+        res.status(200).json({ success: true }); // Luôn trả 200 để PayOS không retry
     }
 };
 
@@ -242,9 +211,9 @@ const createOrder = async (req, res) => {
                     })),
                     returnUrl: `${process.env.FRONTEND_URL}/order-success/${order._id}`,
                     cancelUrl: `${process.env.FRONTEND_URL}/order-cancelled/${order._id}`,
-                    buyerName: `${shippingAddress.firstName} ${shippingAddress.lastName}`,
-                    buyerEmail: req.body.email || 'customer@email.com',
-                    buyerPhone: shippingAddress.phone
+                    // ✅ THÊM CÁC OPTION ĐỂ TĂNG TỐC
+                    expiredAt: Math.floor(Date.now() / 1000) + (30 * 60), // 30 phút hết hạn
+                    signature: undefined // PayOS sẽ tự tạo
                 };
 
                 const paymentLink = await payOS.createPaymentLink(paymentData);

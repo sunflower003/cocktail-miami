@@ -7,7 +7,7 @@ export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth(); // ✅ THÊM authLoading
   const navigate = useNavigate();
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -15,13 +15,16 @@ export default function Orders() {
   useEffect(() => {
     document.title = 'My Orders - Cocktail Miami';
     
+    // ✅ Chờ auth loading hoàn thành trước khi check
+    if (authLoading) return;
+    
     if (!isAuthenticated) {
       navigate('/login', { state: { from: '/orders' } });
       return;
     }
 
     fetchOrders();
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, authLoading, navigate]); // ✅ THÊM authLoading
 
   const fetchOrders = async () => {
     try {
@@ -46,6 +49,18 @@ export default function Orders() {
       setLoading(false);
     }
   };
+
+  // ✅ THÊM LOADING STATE CHO AUTH CHECK
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-black mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   const getStatusIcon = (status) => {
     switch (status) {

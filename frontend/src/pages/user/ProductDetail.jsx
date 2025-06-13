@@ -258,16 +258,11 @@ export default function ProductDetail() {
                 <h1 className="text-2xl lg:text-3xl font-semibold text-gray-900 leading-tight flex-1">
                   {product.name}
                 </h1>
-                <div className="lg:hidden"> {/* Chỉ hiện trên mobile/tablet */}
-                  <WishlistButton 
-                    productId={product._id}
-                    size="lg"
-                  />
-                </div>
+                
               </div>
               
               {product.category && (
-                <div className="flex items-center space-x-2">
+                <div className="flex space-x-2 text-left">
                   <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
                     {product.category.name}
                   </span>

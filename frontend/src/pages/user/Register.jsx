@@ -16,6 +16,33 @@ export default function Register() {
     const [error, setError] = useState('');
     const [registrationResponse, setRegistrationResponse] = useState(null);
     const navigate = useNavigate();
+    const { isAuthenticated, loading: authLoading } = useAuth(); // ✅ THÊM isAuthenticated và authLoading
+
+    // ✅ THÊM AUTO REDIRECT KHI ĐÃ LOGIN
+    useEffect(() => {
+        document.title = 'Sign Up - Cocktail Miami';
+        
+        // Chờ auth loading hoàn thành trước khi check
+        if (authLoading) return;
+        
+        // Nếu đã đăng nhập, redirect về trang chủ
+        if (isAuthenticated) {
+            navigate('/', { replace: true });
+            return;
+        }
+    }, [isAuthenticated, authLoading, navigate]);
+
+    // ✅ HIỂN thị loading khi đang check auth
+    if (authLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
+                    <p>Loading...</p>
+                </div>
+            </div>
+        );
+    }
 
     // Sử dụng AuthContext để có API_BASE_URL tự động
     const API_URL = import.meta.env.VITE_API_URL || 
@@ -29,14 +56,7 @@ export default function Register() {
             [e.target.name]: e.target.value
         });
     };
-
-
-    // Thêm useEffect để set document title
-    useEffect(() => {
-        document.title = 'Sign Up - Cocktail Miami';
-    }, []);
     
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');

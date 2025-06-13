@@ -12,7 +12,7 @@ export default function Login() {
     const [error, setError] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
-    const { login } = useAuth();
+    const { login, isAuthenticated, loading: authLoading } = useAuth(); // ✅ THÊM isAuthenticated và authLoading
 
     const handleChange = (e) => {
         setFormData({
@@ -22,10 +22,31 @@ export default function Login() {
         if (error) setError('');
     };
 
-    // Thêm useEffect để set document title
+    // ✅ THÊM AUTO REDIRECT KHI ĐÃ LOGIN
     useEffect(() => {
         document.title = 'Login - Cocktail Miami';
-    }, []);
+        
+        // Chờ auth loading hoàn thành trước khi check
+        if (authLoading) return;
+        
+        // Nếu đã đăng nhập, redirect về trang chủ
+        if (isAuthenticated) {
+            navigate('/', { replace: true });
+            return;
+        }
+    }, [isAuthenticated, authLoading, navigate]);
+
+    // ✅ HIỂN thị loading khi đang check auth
+    if (authLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
+                    <p>Loading...</p>
+                </div>
+            </div>
+        );
+    }
 
     const handleSubmit = async (e) => {
         e.preventDefault();

@@ -7,7 +7,7 @@ import { useCart } from '../../contexts/CartContext';
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth(); // ✅ THÊM authLoading
   const { cart, fetchCart } = useCart();
   
   // ✅ STATE CHO SHIPPING CONFIG VỚI DEFAULT VALUES
@@ -68,8 +68,11 @@ export default function CheckoutPage() {
     }
   }, [user]);
 
-  // ✅ AUTH CHECK
+  // ✅ AUTH CHECK - CHỜ AUTH LOADING HOÀN THÀNH
   useEffect(() => {
+    // ✅ Chờ auth loading hoàn thành trước khi check
+    if (authLoading) return;
+    
     if (!isAuthenticated) {
       navigate('/login', { state: { from: '/checkout' } });
       return;
@@ -78,7 +81,7 @@ export default function CheckoutPage() {
     if (!cart.items || cart.items.length === 0) {
       fetchCart();
     }
-  }, [isAuthenticated, navigate, cart.items, fetchCart]);
+  }, [isAuthenticated, authLoading, navigate, cart.items, fetchCart]); // ✅ THÊM authLoading
 
   // Get checkout items
   const checkoutItems = location.state?.items || cart.items || [];
@@ -452,9 +455,9 @@ export default function CheckoutPage() {
                     <input
                       type="radio"
                       name="paymentMethod"
-                      value="cod"
-                      checked={formData.paymentMethod === 'cod'}
-                      onChange={handleInputChange}
+                      value="crypto"
+                      // checked={formData.paymentMethod === 'crypto'}
+                      // onChange={handleInputChange}
                       className="w-4 h-4 text-blue-600"
                     />
                     <div className="ml-3 flex-1">

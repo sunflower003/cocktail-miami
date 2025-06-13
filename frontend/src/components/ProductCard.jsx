@@ -143,7 +143,7 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                                             ? 'bg-gray-400 text-white cursor-not-allowed'
                                             : addingToCart
                                             ? 'bg-gray-600 text-white cursor-not-allowed'
-                                            : 'bg-black text-white hover:bg-gray-800 hover:scale-105'
+                                            : 'bg-black text-white hover:bg-gray-800 '
                                     }`}
                                 >
                                     {product.stock === 0 
@@ -225,7 +225,7 @@ const ProductCard = ({ product, viewMode = 'grid' }) => {
                             ? 'bg-gray-400 text-white cursor-not-allowed'
                             : addingToCart
                             ? 'bg-gray-600 text-white cursor-not-allowed'
-                            : 'bg-black text-white hover:bg-gray-800 hover:scale-105'
+                            : 'bg-black text-white hover:bg-gray-800'
                     }`}
                 >
                     {product.stock === 0 

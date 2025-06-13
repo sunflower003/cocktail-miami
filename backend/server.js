@@ -26,10 +26,19 @@ app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
-// Rate limiting
+// Rate limiting - Tăng limit cho production
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: process.env.NODE_ENV === 'production' ? 100 : 1000
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: process.env.NODE_ENV === 'production' ? 1000 : 2000, // ✅ Tăng lên 1000/15min
+    message: {
+        success: false,
+        message: 'Too many requests from this IP, please try again later.',
+        retryAfter: '15 minutes'
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    // Skip rate limiting for health checks
+    skip: (req) => req.path === '/health' || req.path === '/'
 });
 app.use(limiter);
 
@@ -49,9 +58,7 @@ const allowedOrigins = [
 
 app.use(cors({
     origin: (origin, callback) => {
-        console.log('🌐 CORS Origin:', origin); // Debug log
-        
-        // Allow requests with no origin (mobile apps, curl, etc.)
+        // ✅ Chỉ log CORS errors, không log mọi request
         if (!origin) return callback(null, true);
         
         const isAllowed = allowedOrigins.some(allowedOrigin => {
@@ -64,14 +71,13 @@ app.use(cors({
         if (isAllowed) {
             callback(null, true);
         } else {
-            console.error('❌ CORS blocked:', origin);
+            console.error('❌ CORS blocked:', origin); // Chỉ log khi bị block
             callback(new Error('Not allowed by CORS'));
         }
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'
-    ]
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 }));
 
 app.use(express.json({ limit: '10mb' }));

@@ -71,8 +71,8 @@ export default function OrderCancelled() {
             <p className="text-gray-600 text-sm mb-2">Need help?</p>
             <p className="text-gray-500 text-sm">
               Contact our support team at{' '}
-              <a href="mailto:support@cocktailmiami.com" className="text-blue-600 hover:underline">
-                support@cocktailmiami.com
+              <a href="mailto:huylee63897@gmail.com" className="text-blue-600 hover:underline">
+                huylee63897@gmail.com
               </a>
             </p>
           </div>

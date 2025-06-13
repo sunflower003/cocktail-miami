@@ -12,20 +12,23 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [token, setToken] = useState(localStorage.getItem('token'));
+    const [token, setToken] = useState(null); // ✅ Khởi tạo null thay vì lấy từ localStorage ngay
     const [loading, setLoading] = useState(true);
 
-    // API base URL - TỰ ĐỘNG CHUYỂN ĐỔI dựa trên environment
+    // ✅ API base URL - sử dụng URL production thật
     const API_BASE_URL = import.meta.env.VITE_API_URL || 
                         (import.meta.env.PROD 
-                            ? 'https://cocktail-miami-api.onrender.com' // Thay bằng URL Render thật
+                            ? 'https://cocktail-miami.onrender.com' // ✅ Sử dụng URL thật từ .env
                             : 'http://localhost:5000');
 
-    console.log('🌐 Current Environment:', import.meta.env.MODE);
-    console.log('🔗 API_BASE_URL:', API_BASE_URL);
+    // ✅ Chỉ log trong development
+    if (import.meta.env.DEV) {
+        console.log('🌐 Current Environment:', import.meta.env.MODE);
+        console.log('🔗 API_BASE_URL:', API_BASE_URL);
+    }
 
-    // Helper function for API calls
-    const apiCall = async (endpoint, options = {}) => {
+    // ✅ Helper function với retry logic và error handling
+    const apiCall = async (endpoint, options = {}, retries = 2) => {
         const url = `${API_BASE_URL}${endpoint}`;
         
         const config = {
@@ -36,19 +39,43 @@ export const AuthProvider = ({ children }) => {
             ...options,
         };
 
-        try {
-            console.log(`📡 API Call: ${options.method || 'GET'} ${url}`);
-            const response = await fetch(url, config);
-            return response;
-        } catch (error) {
-            console.error('❌ API call failed:', error);
-            throw error;
+        for (let i = 0; i <= retries; i++) {
+            try {
+                if (import.meta.env.DEV) {
+                    console.log(`📡 API Call: ${options.method || 'GET'} ${url}`);
+                }
+                
+                const response = await fetch(url, config);
+                
+                // ✅ Xử lý rate limiting
+                if (response.status === 429) {
+                    const retryAfter = response.headers.get('Retry-After') || '5';
+                    if (i < retries) {
+                        console.warn(`Rate limited. Retrying after ${retryAfter}s...`);
+                        await new Promise(resolve => setTimeout(resolve, parseInt(retryAfter) * 1000));
+                        continue;
+                    }
+                }
+                
+                return response;
+            } catch (error) {
+                if (import.meta.env.DEV) {
+                    console.error(`❌ API call failed (attempt ${i + 1}):`, error);
+                }
+                
+                if (i === retries) throw error;
+                
+                // ✅ Exponential backoff
+                await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 1000));
+            }
         }
     };
 
-    // Khởi tạo auth state khi app load
+    // ✅ Khởi tạo auth state - với proper error handling
     useEffect(() => {
         const initializeAuth = async () => {
+            setLoading(true);
+            
             const storedToken = localStorage.getItem('token');
             
             if (storedToken) {
@@ -59,22 +86,33 @@ export const AuthProvider = ({ children }) => {
                         }
                     });
 
-                    if (response.ok) {
+                    if (response?.ok) {
                         const result = await response.json();
-                        if (result.success) {
-                            setUser(result.data.user);
+                        if (result.success && result.data) {
+                            // ✅ Xử lý cả 2 format response
+                            const userData = result.data.user || result.data;
+                            setUser(userData);
                             setToken(storedToken);
+                            
+                            if (import.meta.env.DEV) {
+                                console.log('✅ Auth initialized successfully');
+                            }
                         } else {
+                            // ✅ Token không hợp lệ
                             localStorage.removeItem('token');
+                            setUser(null);
                             setToken(null);
                         }
                     } else {
+                        // ✅ Response không OK
                         localStorage.removeItem('token');
+                        setUser(null);
                         setToken(null);
                     }
                 } catch (error) {
                     console.error('Auth initialization error:', error);
                     localStorage.removeItem('token');
+                    setUser(null);
                     setToken(null);
                 }
             }
@@ -85,14 +123,25 @@ export const AuthProvider = ({ children }) => {
         initializeAuth();
     }, []);
 
+    // ✅ Login function với error handling
     const login = (userData, authToken) => {
-        setUser(userData);
-        setToken(authToken);
-        localStorage.setItem('token', authToken);
+        try {
+            setUser(userData);
+            setToken(authToken);
+            localStorage.setItem('token', authToken);
+            
+            if (import.meta.env.DEV) {
+                console.log('✅ User logged in:', userData?.email);
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+        }
     };
 
+    // ✅ Logout function với proper cleanup
     const logout = async () => {
         try {
+            // ✅ Gọi API logout nếu có token
             if (token) {
                 await apiCall('/api/auth/logout', {
                     method: 'POST',
@@ -102,17 +151,28 @@ export const AuthProvider = ({ children }) => {
                 });
             }
         } catch (error) {
-            console.error('Logout error:', error);
+            // ✅ Không block logout nếu API call thất bại
+            console.error('Logout API error:', error);
         } finally {
+            // ✅ Luôn cleanup local state
             setUser(null);
             setToken(null);
             localStorage.removeItem('token');
+            
+            if (import.meta.env.DEV) {
+                console.log('✅ User logged out');
+            }
         }
     };
 
+    // ✅ Update user function
     const updateUser = (updatedUserData) => {
         setUser(prev => ({ ...prev, ...updatedUserData }));
     };
+
+    // ✅ Computed values
+    const isAuthenticated = !!user && !!token;
+    const isEmailVerified = user?.isEmailVerified || false;
 
     const value = {
         user,
@@ -121,8 +181,9 @@ export const AuthProvider = ({ children }) => {
         logout,
         updateUser,
         loading,
-        isAuthenticated: !!user && !!token,
-        isEmailVerified: user?.isEmailVerified || false
+        isAuthenticated,
+        isEmailVerified,
+        apiCall // ✅ Expose apiCall để các component khác sử dụng
     };
 
     return (
