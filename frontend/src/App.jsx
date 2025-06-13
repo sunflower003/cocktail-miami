@@ -16,6 +16,10 @@ import ProductDetail from './pages/user/ProductDetail.jsx';
 import AllProducts from './pages/user/AllProducts.jsx';
 import Wishlist from './pages/user/Wishlist';
 import Cart from './pages/user/Cart'; // THÊM IMPORT NÀY
+import Checkout from './pages/user/Checkout';
+import OrderSuccess from './pages/user/OrderSuccess';
+import OrderCancelled from './pages/user/OrderCancelled';
+import Orders from './pages/user/Orders';
 
 // Admin pages
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';
@@ -44,6 +48,10 @@ function App() {
               <Route path="products" element={<AllProducts />} />
               <Route path="wishlist" element={<Wishlist />} />
               <Route path="cart" element={<Cart />} /> {/* THÊM ROUTE CHO CART */}
+              <Route path="checkout" element={<Checkout />} /> {/* THÊM ROUTE */}
+              <Route path="orders" element={<Orders />} /> {/* THÊM */}
+              <Route path="order-success/:orderId" element={<OrderSuccess />} /> {/* THÊM */}
+              <Route path="order-cancelled/:orderId" element={<OrderCancelled />} /> {/* THÊM */}
             </Route>
 
             {/* Admin Routes */}

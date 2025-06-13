@@ -16,6 +16,7 @@ const categoryRoutes = require('./routes/categoryRoutes');
 const productRoutes = require('./routes/productRoutes');
 const wishlistRoutes = require('./routes/wishlistRoutes');
 const cartRoutes = require('./routes/cartRoutes');
+const orderRoutes = require('./routes/orderRoutes'); // THÊM IMPORT
 
 // Load environment variables trước
 dotenv.config();
@@ -61,8 +62,7 @@ const corsOptions = {
             
         ].filter(Boolean);
 
-        console.log('🌐 CORS Check - Origin:', origin);
-        console.log('🌐 CORS Check - Allowed:', allowedOrigins);
+       
 
         // Allow requests with no origin (mobile apps, Postman, etc.)
         if (!origin) {
@@ -118,7 +118,8 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/wishlist', wishlistRoutes);
-app.use('/api/cart', cartRoutes); // ADD THIS LINE
+app.use('/api/cart', cartRoutes);
+app.use('/api/orders', orderRoutes); // THÊM ORDER ROUTES
 
 // Health check endpoint - ĐẶT TRƯỚC CÁC MIDDLEWARE KHÁC
 app.get('/health', (req, res) => {

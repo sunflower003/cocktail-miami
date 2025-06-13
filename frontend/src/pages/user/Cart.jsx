@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Trash2, Minus, Plus, ShoppingBag, ArrowLeft } from 'lucide-react';
 import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -8,6 +8,7 @@ export default function Cart() {
     const { cart, loading, updateCartItem, removeFromCart, clearCart } = useCart();
     const { isAuthenticated } = useAuth();
     const [updatingItems, setUpdatingItems] = useState(new Set());
+    const navigate = useNavigate();
 
     useEffect(() => {
         document.title = 'Shopping Cart - Cocktail Miami';
@@ -306,7 +307,10 @@ export default function Cart() {
                                 </div>
 
                                 {/* Checkout Button */}
-                                <button className="w-full bg-black text-white py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors mb-4">
+                                <button 
+                                    onClick={() => navigate('/checkout')}
+                                    className="w-full bg-black text-white py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors mb-4"
+                                >
                                     Proceed to Checkout
                                 </button>
 
