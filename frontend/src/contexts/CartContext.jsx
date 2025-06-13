@@ -53,9 +53,7 @@ export const CartProvider = ({ children }) => {
     };
 
     const addToCart = async (productId, quantity = 1) => {
-        if (!isAuthenticated) {
-            return { success: false, message: 'Please login to add items to cart' };
-        }
+        if (!isAuthenticated) return { success: false, message: 'Please login first' };
 
         try {
             const token = localStorage.getItem('token');
@@ -72,7 +70,9 @@ export const CartProvider = ({ children }) => {
             const data = await response.json();
             
             if (data.success) {
+                // ✅ CẬP NHẬT CART STATE NGAY LẬP TỨC
                 setCart(data.data);
+                console.log('✅ Cart updated:', data.data);
                 return { success: true, message: 'Added to cart' };
             } else {
                 return { success: false, message: data.message };

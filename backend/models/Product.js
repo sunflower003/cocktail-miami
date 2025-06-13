@@ -9,9 +9,10 @@ const productSchema = new mongoose.Schema({
     },
     slug: {
         type: String,
-        unique: true,
+        unique: true, // ✅ GIỮ UNIQUE
         lowercase: true,
         trim: true
+        // ❌ BỎ index: true
     },
     description: {
         type: String,
@@ -117,9 +118,10 @@ productSchema.pre('save', function(next) {
     next();
 });
 
-// Index for better query performance
-productSchema.index({ slug: 1 });
+// ✅ CHỈ GIỮ CÁC INDEX CẦN THIẾT - BỎ slug vì đã có unique: true
+// productSchema.index({ slug: 1 }); // ❌ BỎ DÒNG NÀY
 productSchema.index({ category: 1 });
 productSchema.index({ isFeatured: 1 });
+productSchema.index({ isActive: 1 });
 
 module.exports = mongoose.model('Product', productSchema);

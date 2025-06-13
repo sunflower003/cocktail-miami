@@ -37,10 +37,10 @@ const orderSchema = new mongoose.Schema({
         address: { type: String, required: true },
         apartment: String,
         city: { type: String, required: true },
-        state: { type: String, required: true },
+        state: { type: String, required: false }, // ✅ BỎ REQUIRED
         zipCode: { type: String, required: true },
         phone: { type: String, required: true },
-        country: { type: String, default: 'United States' }
+        country: { type: String, default: 'Vietnam' } // ✅ CHANGE DEFAULT
     },
     paymentMethod: {
         type: String,

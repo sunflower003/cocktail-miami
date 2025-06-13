@@ -10,10 +10,11 @@ const userSchema = new mongoose.Schema({
     email: {
         type: String,
         required: [true, 'Email is required'],
-        unique: true,
+        unique: true, // ✅ GIỮ UNIQUE
         lowercase: true,
         trim: true,
         match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email']
+        // ❌ BỎ index: true
     },
     passwordHash: {
         type: String,
@@ -80,8 +81,8 @@ const userSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Index cho tối ưu truy vấn
-userSchema.index({ email: 1 });
+// ✅ CHỈ GIỮ CÁC INDEX CẦN THIẾT - BỎ email vì đã có unique: true
+// userSchema.index({ email: 1 }); // ❌ BỎ DÒNG NÀY
 userSchema.index({ verificationToken: 1 });
 userSchema.index({ resetPasswordToken: 1 });
 

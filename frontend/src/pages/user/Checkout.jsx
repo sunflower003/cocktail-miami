@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, Info, Lock, ShoppingBag, ArrowLeft, CreditCard, Truck } from 'lucide-react';
+import { Lock, ShoppingBag, CreditCard, Truck } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
 
@@ -10,39 +10,26 @@ export default function CheckoutPage() {
   const { user, isAuthenticated } = useAuth();
   const { cart, fetchCart } = useCart();
   
-  // Check authentication
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login', { state: { from: '/checkout' } });
-      return;
-    }
-    
-    // Fetch cart nếu chưa có
-    if (!cart.items || cart.items.length === 0) {
-      fetchCart();
-    }
-  }, [isAuthenticated, navigate, cart.items, fetchCart]);
+  // ✅ STATE CHO SHIPPING CONFIG VỚI DEFAULT VALUES
+  const [shippingConfig, setShippingConfig] = useState({
+    FREE_SHIPPING_THRESHOLD: 50,
+    SHIPPING_FEE: 1,
+    TAX_RATE: 0.08
+  });
 
-  // Form states
   const [formData, setFormData] = useState({
-    // Contact
     email: user?.email || '',
     emailOffers: true,
-    
-    // Shipping Address
     firstName: '',
     lastName: '',
     company: '',
     address: '',
     apartment: '',
     city: '',
-    state: 'California',
     zipCode: '',
-    phone: '',
-    country: 'United States',
-    
-    // Payment
-    paymentMethod: 'payos', // 'payos' or 'cod'
+    phone: user?.phone || '', // ✅ AUTO-FILL TỪ USER DATA
+    country: 'Vietnam',
+    paymentMethod: 'payos',
     saveInfo: true,
     textOffers: false
   });
@@ -52,19 +39,64 @@ export default function CheckoutPage() {
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-  // Get checkout items (from cart or direct buy)
+  // ✅ FETCH SHIPPING CONFIG
+  useEffect(() => {
+    const fetchShippingConfig = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/orders/shipping-config`);
+        const result = await response.json();
+        
+        if (result.success) {
+          setShippingConfig(result.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch shipping config:', error);
+      }
+    };
+
+    fetchShippingConfig();
+  }, [API_URL]);
+
+  // ✅ UPDATE FORM DATA WHEN USER DATA CHANGES
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        email: user.email || '',
+        phone: user.phone || '', // ✅ AUTO-UPDATE PHONE
+      }));
+    }
+  }, [user]);
+
+  // ✅ AUTH CHECK
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: '/checkout' } });
+      return;
+    }
+    
+    if (!cart.items || cart.items.length === 0) {
+      fetchCart();
+    }
+  }, [isAuthenticated, navigate, cart.items, fetchCart]);
+
+  // Get checkout items
   const checkoutItems = location.state?.items || cart.items || [];
   const isDirectBuy = location.state?.directBuy || false;
 
-  // Calculate totals
+  // ✅ CALCULATE TOTALS
   const subtotal = checkoutItems.reduce((total, item) => {
     const product = isDirectBuy ? item.product : item.productId;
     const price = isDirectBuy ? product.price : item.price;
     return total + (price * item.quantity);
   }, 0);
 
-  const shippingFee = subtotal >= 50 ? 0 : 0;
-  const tax = Math.round(subtotal * 0.08 * 100) / 100; // 8% tax
+  const totalItems = checkoutItems.reduce((total, item) => {
+    return total + item.quantity;
+  }, 0);
+
+  const shippingFee = subtotal >= shippingConfig.FREE_SHIPPING_THRESHOLD ? 0 : shippingConfig.SHIPPING_FEE;
+  const tax = Math.round(subtotal * shippingConfig.TAX_RATE * 100) / 100;
   const total = subtotal + shippingFee + tax;
 
   const handleInputChange = (e) => {
@@ -76,7 +108,7 @@ export default function CheckoutPage() {
   };
 
   const validateForm = () => {
-    const required = ['firstName', 'lastName', 'address', 'city', 'state', 'zipCode', 'phone'];
+    const required = ['firstName', 'lastName', 'address', 'city', 'zipCode', 'phone'];
     
     for (const field of required) {
       if (!formData[field].trim()) {
@@ -117,7 +149,6 @@ export default function CheckoutPage() {
           address: formData.address,
           apartment: formData.apartment,
           city: formData.city,
-          state: formData.state,
           zipCode: formData.zipCode,
           phone: formData.phone,
           country: formData.country
@@ -138,10 +169,8 @@ export default function CheckoutPage() {
 
       if (result.success) {
         if (formData.paymentMethod === 'payos' && result.data.paymentUrl) {
-          // Redirect to PayOS payment page
           window.location.href = result.data.paymentUrl;
         } else {
-          // COD success - redirect to order confirmation
           navigate(`/order-success/${result.data.order._id}`);
         }
       } else {
@@ -177,19 +206,11 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <div className="border-b bg-gray-50">
+      <div className="border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-4">
-            <button 
-              onClick={() => navigate('/cart')}
-              className="text-gray-600 hover:text-gray-800 transition-colors"
-            >
-              <ArrowLeft className="w-6 h-6" />
-            </button>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Checkout</h1>
-              <p className="text-gray-600">Complete your order</p>
-            </div>
+          <div className="text-left">
+            <h1 className="text-2xl font-bold">Checkout</h1>
+            <p className="text-gray-600">Complete your order</p>
           </div>
         </div>
       </div>
@@ -197,7 +218,7 @@ export default function CheckoutPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Left Column - Checkout Form */}
+            {/* Left Column - Form sections */}
             <div className="space-y-8">
               {error && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
@@ -206,8 +227,8 @@ export default function CheckoutPage() {
               )}
 
               {/* Contact Section */}
-              <div className="bg-white p-6 rounded-lg border">
-                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <div className="bg-white p-6 rounded-lg">
+                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-left">
                   <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                     <span className="text-sm font-bold text-blue-600">1</span>
                   </div>
@@ -215,7 +236,7 @@ export default function CheckoutPage() {
                 </h2>
                 
                 <div className="space-y-4">
-                  <div>
+                  <div className="text-left">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
                     <input
                       type="email"
@@ -227,7 +248,7 @@ export default function CheckoutPage() {
                     />
                   </div>
                   
-                  <label className="flex items-center gap-2">
+                  <label className="flex items-center gap-2 text-left">
                     <input
                       type="checkbox"
                       name="emailOffers"
@@ -241,15 +262,15 @@ export default function CheckoutPage() {
               </div>
 
               {/* Shipping Address */}
-              <div className="bg-white p-6 rounded-lg border">
-                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <div className="bg-white p-6 rounded-lg">
+                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-left">
                   <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                     <span className="text-sm font-bold text-blue-600">2</span>
                   </div>
                   Shipping Address
                 </h2>
                 
-                <div className="space-y-4">
+                <div className="space-y-4 text-left">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
@@ -309,7 +330,8 @@ export default function CheckoutPage() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* ✅ BỎ STATE DROPDOWN - CHỈ GIỮ CITY VÀ ZIP */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
                       <input
@@ -317,24 +339,10 @@ export default function CheckoutPage() {
                         name="city"
                         value={formData.city}
                         onChange={handleInputChange}
+                        placeholder="e.g., Hanoi, Ho Chi Minh City"
                         className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         required
                       />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
-                      <select 
-                        name="state"
-                        value={formData.state}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                      >
-                        <option value="California">California</option>
-                        <option value="New York">New York</option>
-                        <option value="Texas">Texas</option>
-                        <option value="Florida">Florida</option>
-                      </select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">ZIP Code</label>
@@ -343,29 +351,54 @@ export default function CheckoutPage() {
                         name="zipCode"
                         value={formData.zipCode}
                         onChange={handleInputChange}
+                        placeholder="e.g., 100000"
                         className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         required
                       />
                     </div>
                   </div>
 
+                  {/* ✅ PHONE AUTO-FILLED FROM USER DATA */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Phone Number
+                      {user?.phone && (
+                        <span className="text-xs text-green-600 ml-2"></span>
+                      )}
+                    </label>
                     <input
                       type="tel"
                       name="phone"
                       value={formData.phone}
                       onChange={handleInputChange}
+                      placeholder="Enter your phone number"
                       className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
+                    />
+                    {!user?.phone && (
+                      <p className="text-xs text-amber-600 mt-1">
+                        💡 Add phone number to your profile to auto-fill this field
+                      </p>
+                    )}
+                  </div>
+
+                  {/* ✅ COUNTRY - FIXED TO VIETNAM */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                    <input
+                      type="text"
+                      name="country"
+                      value={formData.country}
+                      disabled
+                      className="w-full px-3 py-3 border border-gray-300 rounded-md bg-gray-50 text-gray-500"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Payment Method */}
-              <div className="bg-white p-6 rounded-lg border">
-                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <div className="bg-white p-6 rounded-lg">
+                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-left">
                   <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                     <span className="text-sm font-bold text-blue-600">3</span>
                   </div>
@@ -374,7 +407,7 @@ export default function CheckoutPage() {
                 
                 <div className="space-y-4">
                   {/* PayOS Option */}
-                  <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-300 transition-colors">
+                  <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-300 transition-colors text-left">
                     <input
                       type="radio"
                       name="paymentMethod"
@@ -395,7 +428,7 @@ export default function CheckoutPage() {
                   </label>
 
                   {/* COD Option */}
-                  <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-300 transition-colors">
+                  <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-300 transition-colors text-left">
                     <input
                       type="radio"
                       name="paymentMethod"
@@ -414,13 +447,32 @@ export default function CheckoutPage() {
                       </p>
                     </div>
                   </label>
+                  {/* Crypto Option */}
+                  <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-300 transition-colors text-left">
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="cod"
+                      checked={formData.paymentMethod === 'cod'}
+                      onChange={handleInputChange}
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    <div className="ml-3 flex-1">
+                      <div className="flex items-center gap-2">
+                        <i className="ri-btc-fill text-xl text-yellow-600"></i><span className="font-medium">Crypto Payment</span>
+                      </div>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Pay with Metamask, Binance,...
+                      </p>
+                    </div>
+                  </label>
                 </div>
               </div>
             </div>
 
             {/* Right Column - Order Summary */}
-            <div className="lg:sticky lg:top-8 h-fit">
-              <div className="bg-gray-50 p-6 rounded-lg border">
+            <div className="lg:sticky lg:top-8 h-fit text-left">
+              <div className="p-6 rounded-lg border bg-gray-50">
                 <h3 className="text-lg font-semibold mb-4">Order Summary</h3>
                 
                 {/* Order Items */}
@@ -458,21 +510,48 @@ export default function CheckoutPage() {
                 {/* Order Totals */}
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between text-sm">
-                    <span>Subtotal</span>
+                    <span className="flex items-center gap-2">
+                      Subtotal
+                      <span className="text-gray-500">
+                        · {totalItems} {totalItems === 1 ? 'item' : 'items'}
+                      </span>
+                    </span>
                     <span>${subtotal.toFixed(2)}</span>
                   </div>
+                  
                   <div className="flex justify-between text-sm">
-                    <span>Shipping</span>
-                    <span>{shippingFee === 0 ? 'Free' : `$${shippingFee.toFixed(2)}`}</span>
+                    <span className="flex items-center gap-1">
+                      <Truck className="w-4 h-4" />
+                      Shipping
+                      {shippingConfig && subtotal < shippingConfig.FREE_SHIPPING_THRESHOLD && (
+                        <span className="text-amber-600 text-xs">
+                          
+                        </span>
+                      )}
+                    </span>
+                    <span className={`font-medium ${shippingFee === 0 ? 'text-green-600' : 'text-gray-900'}`}>
+                      {shippingFee === 0 ? (
+                        <span className="flex items-center gap-1">
+                          <span>Free</span>
+                          <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                        </span>
+                      ) : (
+                        `$${shippingFee.toFixed(2)}`
+                      )}
+                    </span>
                   </div>
+                  
                   <div className="flex justify-between text-sm">
-                    <span>Tax</span>
+                    <span>Tax ({shippingConfig ? (shippingConfig.TAX_RATE * 100).toFixed(0) : '8'}%)</span>
                     <span>${tax.toFixed(2)}</span>
                   </div>
+                  
                   <div className="border-t pt-3">
                     <div className="flex justify-between items-center">
                       <span className="text-lg font-semibold">Total</span>
-                      <span className="text-lg font-bold text-green-800">
+                      <span className="text-lg font-semibold text-green-800">
                         ${total.toFixed(2)}
                       </span>
                     </div>
@@ -482,7 +561,7 @@ export default function CheckoutPage() {
                 {/* Place Order Button */}
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || !shippingConfig}
                   className="w-full bg-black text-white py-4 rounded-lg font-medium text-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? (
@@ -490,8 +569,10 @@ export default function CheckoutPage() {
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                       <span>Processing...</span>
                     </div>
+                  ) : !shippingConfig ? (
+                    'Loading...'
                   ) : (
-                    `Place Order - $${total.toFixed(2)}`
+                    `Pay Now`
                   )}
                 </button>
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Trash2, Minus, Plus, ShoppingBag, ArrowLeft } from 'lucide-react';
+import { Trash2, Minus, Plus, ShoppingBag, Truck } from 'lucide-react';
 import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -8,11 +8,43 @@ export default function Cart() {
     const { cart, loading, updateCartItem, removeFromCart, clearCart } = useCart();
     const { isAuthenticated } = useAuth();
     const [updatingItems, setUpdatingItems] = useState(new Set());
+    const [shippingConfig, setShippingConfig] = useState({
+        FREE_SHIPPING_THRESHOLD: 50,
+        SHIPPING_FEE: 0.5,
+        TAX_RATE: 0.08
+    });
     const navigate = useNavigate();
+
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+    // ✅ FETCH SHIPPING CONFIG GIỐNG CHECKOUT
+    useEffect(() => {
+        const fetchShippingConfig = async () => {
+            try {
+                const response = await fetch(`${API_URL}/api/orders/shipping-config`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    setShippingConfig(result.data);
+                }
+            } catch (error) {
+                console.error('Failed to fetch shipping config:', error);
+                // Keep default values if API fails
+            }
+        };
+
+        fetchShippingConfig();
+    }, [API_URL]);
 
     useEffect(() => {
         document.title = 'Shopping Cart - Cocktail Miami';
     }, []);
+
+    // ✅ CALCULATE TOTALS GIỐNG CHECKOUT
+    const subtotal = cart.totalAmount || 0;
+    const shippingFee = subtotal >= shippingConfig.FREE_SHIPPING_THRESHOLD ? 0 : shippingConfig.SHIPPING_FEE;
+    const tax = Math.round(subtotal * shippingConfig.TAX_RATE * 100) / 100;
+    const total = subtotal + shippingFee + tax;
 
     const handleQuantityChange = async (productId, newQuantity) => {
         if (newQuantity < 1) return;
@@ -78,7 +110,6 @@ export default function Cart() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-left">
                         <div className="flex items-center gap-4 mb-4 sm:mb-0 text-left">
-                            
                             <div>
                                 <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Shopping Cart</h1>
                                 <p className="text-gray-600">
@@ -282,29 +313,71 @@ export default function Cart() {
                             <div className="rounded-lg p-6 sticky top-8">
                                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h3>
                                 
-                                {/* Order Details */}
+                                {/* ✅ ORDER DETAILS VỚI SHIPPING FEE CALCULATION */}
                                 <div className="space-y-3 mb-6">
                                     <div className="flex justify-between">
                                         <span className="text-gray-600">Subtotal ({cart.totalItems} items)</span>
-                                        <span className="font-medium">${cart.totalAmount.toFixed(2)}</span>
+                                        <span className="font-medium">${subtotal.toFixed(2)}</span>
                                     </div>
+                                    
+                                    {/* ✅ SHIPPING FEE TÍNH TOÁN GIỐNG CHECKOUT */}
+                                    <div className="flex justify-between text-sm">
+                                        <span className="flex items-center gap-1">
+                                            <Truck className="w-4 h-4" />
+                                            <span className="text-gray-600">Shipping</span>
+                                            {shippingConfig && subtotal < shippingConfig.FREE_SHIPPING_THRESHOLD && (
+                                                <span className="text-amber-600 text-xs ml-1">
+                                                    
+                                                </span>
+                                            )}
+                                        </span>
+                                        <span className={`font-medium ${shippingFee === 0 ? 'text-green-600' : 'text-gray-900'}`}>
+                                            {shippingFee === 0 ? (
+                                                <span className="flex items-center gap-1">
+                                                    <span>Free</span>
+                                                    <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                                    </svg>
+                                                </span>
+                                            ) : (
+                                                `$${shippingFee.toFixed(2)}`
+                                            )}
+                                        </span>
+                                    </div>
+                                    
                                     <div className="flex justify-between">
-                                        <span className="text-gray-600">Shipping</span>
-                                        <span className="font-medium">Free</span>
+                                        <span className="text-gray-600">
+                                            Tax ({shippingConfig ? (shippingConfig.TAX_RATE * 100).toFixed(0) : '8'}%)
+                                        </span>
+                                        <span className="font-medium">${tax.toFixed(2)}</span>
                                     </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">Tax</span>
-                                        <span className="font-medium">Calculated at checkout</span>
-                                    </div>
+                                    
                                     <div className="border-t pt-3">
                                         <div className="flex justify-between items-center">
                                             <span className="text-lg font-semibold text-gray-900">Total</span>
                                             <span className="text-lg font-semibold text-green-800">
-                                                ${cart.totalAmount.toFixed(2)}
+                                                ${total.toFixed(2)}
                                             </span>
                                         </div>
                                     </div>
                                 </div>
+
+                                {/* ✅ FREE SHIPPING PROGRESS BAR */}
+                                {subtotal < shippingConfig.FREE_SHIPPING_THRESHOLD && (
+                                    <div className="mb-6 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                                        <div className="text-sm text-amber-800 mb-2">
+                                            <span className="font-semibold">${(shippingConfig.FREE_SHIPPING_THRESHOLD - subtotal).toFixed(2)}</span> away from free shipping!
+                                        </div>
+                                        <div className="w-full bg-amber-200 rounded-full h-2">
+                                            <div 
+                                                className="bg-amber-600 h-2 rounded-full transition-all duration-300"
+                                                style={{
+                                                    width: `${Math.min((subtotal / shippingConfig.FREE_SHIPPING_THRESHOLD) * 100, 100)}%`
+                                                }}
+                                            ></div>
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Checkout Button */}
                                 <button 
@@ -324,7 +397,12 @@ export default function Cart() {
 
                                 {/* Security Notice */}
                                 <div className="mt-6 text-base text-gray-500 text-center">
-                                    <p><i className="ri-shield-keyhole-line"></i> Secure checkout with SSL encryption</p>
+                                    <p className="flex items-center justify-center gap-1">
+                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                                        </svg>
+                                        Secure checkout with SSL encryption
+                                    </p>
                                 </div>
                             </div>
                         </div>

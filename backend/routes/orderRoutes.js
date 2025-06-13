@@ -4,13 +4,15 @@ const {
     createOrder,
     handlePayOSWebhook,
     getUserOrders,
-    getOrder
+    getOrder,
+    getShippingConfig // ✅ IMPORT
 } = require('../controllers/orderController');
 
 const router = express.Router();
 
-// ✅ PUBLIC ROUTES TRƯỚC (không cần auth)
+// ✅ PUBLIC ROUTES
 router.post('/payos-webhook', handlePayOSWebhook);
+router.get('/shipping-config', getShippingConfig); // ✅ PUBLIC API CHO SHIPPING CONFIG
 
 // Test routes
 router.get('/test', (req, res) => {

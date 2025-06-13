@@ -147,7 +147,7 @@ export default function OrderSuccess() {
               </div>
 
               {/* Order Items */}
-              <div className="border-t pt-6">
+              <div className="border-t pt-6 text-left">
                 <h3 className="text-lg font-semibold mb-4">Order Items</h3>
                 <div className="space-y-4">
                   {order.items.map((item, index) => (
@@ -188,7 +188,7 @@ export default function OrderSuccess() {
                     <span>${order.tax.toFixed(2)}</span>
                   </div>
                   <div className="border-t pt-2">
-                    <div className="flex justify-between items-center text-lg font-bold">
+                    <div className="flex justify-between items-center text-lg font-semibold">
                       <span>Total</span>
                       <span>${order.finalTotal.toFixed(2)}</span>
                     </div>
@@ -235,7 +235,7 @@ export default function OrderSuccess() {
                   <Truck className="w-5 h-5" />
                   Shipping Address
                 </h3>
-                <div className="text-gray-600 space-y-1">
+                <div className="text-gray-600 space-y-1 text-left">
                   <p className="font-medium text-gray-900">
                     {order.shippingAddress.firstName} {order.shippingAddress.lastName}
                   </p>
@@ -259,11 +259,11 @@ export default function OrderSuccess() {
             {order.paymentMethod === 'payos' && !order.isPaid && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
                 <h3 className="text-lg font-semibold text-blue-900 mb-2">Payment Instructions</h3>
-                <p className="text-blue-800 mb-4">
+                <p className="text-blue-800 mb-4 text-left">
                   Your order has been created successfully. If you were redirected before completing payment, 
                   you can complete the payment using the information below:
                 </p>
-                <div className="bg-white rounded p-4 border">
+                <div className="bg-white rounded p-4 border text-left">
                   <p><strong>Order Code:</strong> {order.paymentInfo?.payosOrderCode}</p>
                   <p><strong>Amount:</strong> ${order.finalTotal.toFixed(2)}</p>
                   <p className="text-sm text-gray-600 mt-2">

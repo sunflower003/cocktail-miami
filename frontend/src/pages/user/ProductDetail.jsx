@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext.jsx';
+import { useCart } from '../../contexts/CartContext.jsx';
 import ProductReviews from '../../components/ProductReview.jsx';
+import Toast from '../../components/Toast.jsx';
+import WishlistButton from '../../components/WishlistButton.jsx'; // ✅ THÊM IMPORT
 
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { addToCart } = useCart();
   
   const [product, setProduct] = useState(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -15,31 +19,31 @@ export default function ProductDetail() {
   const [error, setError] = useState('');
   const [addingToCart, setAddingToCart] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
-  // THÊM CÁC STATE CHO NOTIFICATION
-  const [notification, setNotification] = useState({
+  
+  // Toast state
+  const [toast, setToast] = useState({
     show: false,
-    type: '', // 'success' or 'error'
+    type: '',
     message: ''
   });
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-  // THÊM FUNCTION HIỂN THỊ NOTIFICATION
-  const showNotification = (type, message) => {
-    setNotification({
+  // Toast functions
+  const showToast = (type, message) => {
+    setToast({
       show: true,
       type,
       message
     });
+  };
 
-    // Tự động ẩn sau 4 giây
-    setTimeout(() => {
-      setNotification({
-        show: false,
-        type: '',
-        message: ''
-      });
-    }, 4000);
+  const hideToast = () => {
+    setToast({
+      show: false,
+      type: '',
+      message: ''
+    });
   };
 
   // Fetch product data
@@ -69,42 +73,33 @@ export default function ProductDetail() {
     }
   }, [id, API_URL]);
 
-  // Handle add to cart - CẬP NHẬT VỚI NOTIFICATION
+  // Handle add to cart
   const handleAddToCart = async () => {
     if (!user) {
       navigate('/login', { state: { from: `/products/${id}` } });
       return;
     }
 
+    if (product.stock === 0) {
+      showToast('error', 'Product is out of stock');
+      return;
+    }
+
     try {
       setAddingToCart(true);
-      const token = localStorage.getItem('token');
       
-      const response = await fetch(`${API_URL}/api/cart/add`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          productId: product._id,
-          quantity: quantity
-        })
-      });
-
-      const result = await response.json();
+      const result = await addToCart(product._id, quantity);
       
       if (result.success) {
-        // HIỂN THỊ THÔNG BÁO THÀNH CÔNG
-        showNotification('success', `Added ${quantity} ${product.name} to cart successfully!`);
+        showToast('success', `Added ${quantity} ${product.name} to cart successfully!`);
+        console.log(`Added ${quantity} ${product.name} to cart successfully`);
       } else {
-        // HIỂN THỊ THÔNG BÁO LỖI
-        showNotification('error', result.message || 'Failed to add to cart');
+        showToast('error', `❌ Failed to add to cart: ${result.message}`);
+        console.error('Failed to add to cart:', result.message);
       }
     } catch (error) {
       console.error('Error adding to cart:', error);
-      // HIỂN THỊ THÔNG BÁO LỖI NETWORK
-      showNotification('error', 'Network error. Please check your connection and try again.');
+      showToast('error', `❌ Error adding ${product.name} to cart`);
     } finally {
       setAddingToCart(false);
     }
@@ -117,7 +112,6 @@ export default function ProductDetail() {
       return;
     }
     
-    // Navigate to checkout with this product
     navigate('/checkout', { 
       state: { 
         items: [{ product, quantity }],
@@ -155,50 +149,13 @@ export default function ProductDetail() {
 
   return (
     <div className="min-h-screen">
-      {/* TOAST NOTIFICATION */}
-      {notification.show && (
-        <div className={`fixed top-4 right-4 z-50 max-w-sm w-full transform transition-all duration-300 ease-in-out ${
-          notification.show ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
-        }`}>
-          <div className={`rounded-lg shadow-lg p-4 ${
-            notification.type === 'success' 
-              ? 'bg-green-500 text-white' 
-              : 'bg-red-500 text-white'
-          }`}>
-            <div className="flex items-start">
-              <div className="flex-shrink-0">
-                {notification.type === 'success' ? (
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                ) : (
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                )}
-              </div>
-              <div className="ml-3 w-0 flex-1">
-                <p className="text-sm font-medium">
-                  {notification.type === 'success' ? 'Success!' : 'Error!'}
-                </p>
-                <p className="mt-1 text-sm opacity-90">
-                  {notification.message}
-                </p>
-              </div>
-              <div className="ml-4 flex-shrink-0 flex">
-                <button
-                  onClick={() => setNotification({ show: false, type: '', message: '' })}
-                  className="rounded-md inline-flex text-white hover:opacity-75 focus:outline-none"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Toast Notification */}
+      <Toast 
+        show={toast.show}
+        type={toast.type}
+        message={toast.message}
+        onClose={hideToast}
+      />
 
       {/* Breadcrumb */}
       <div className="border-b">
@@ -237,6 +194,16 @@ export default function ProductDetail() {
                   e.target.src = '/img/default-product.png';
                 }}
               />
+              
+              {/* ✅ THÊM NÚT TIM VÀO GÓC PHẢI TRÊN HÌNH ẢNH */}
+              <div className="absolute top-4 right-4 z-10">
+                <WishlistButton 
+                  productId={product._id}
+                  size="lg"
+                  className="shadow-lg backdrop-blur-sm"
+                />
+              </div>
+              
               {product.isFeatured && (
                 <div className="absolute top-4 left-4 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
                   Featured
@@ -285,9 +252,20 @@ export default function ProductDetail() {
                   {product.company} Company
                 </p>
               )}
-              <h1 className="text-2xl lg:text-3xl font-semibold text-gray-900 leading-tight">
-                {product.name}
-              </h1>
+              
+              {/* ✅ THÊM NÚT TIM VÀO HEADER CHO MOBILE/TABLET */}
+              <div className="flex items-start justify-between gap-4">
+                <h1 className="text-2xl lg:text-3xl font-semibold text-gray-900 leading-tight flex-1">
+                  {product.name}
+                </h1>
+                <div className="lg:hidden"> {/* Chỉ hiện trên mobile/tablet */}
+                  <WishlistButton 
+                    productId={product._id}
+                    size="lg"
+                  />
+                </div>
+              </div>
+              
               {product.category && (
                 <div className="flex items-center space-x-2">
                   <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
@@ -415,7 +393,7 @@ export default function ProductDetail() {
                       onClick={handleBuyNow}
                       className="w-full bg-black text-white py-4 rounded-xl font-medium text-lg hover:bg-gray-800 transition-colors"
                     >
-                      Buy Now - ${(product.price * quantity).toFixed(2)}
+                      Buy Now
                     </button>
                     <button
                       onClick={handleAddToCart}
@@ -428,12 +406,11 @@ export default function ProductDetail() {
                           <span>Adding to Cart...</span>
                         </div>
                       ) : (
-                        <>
-                          
-                          Add to Cart
-                        </>
+                        'Add to Cart'
                       )}
                     </button>
+                    
+                   
                   </>
                 )}
               </div>
