@@ -38,7 +38,7 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// CORS configuration - TỰ ĐỘNG CHUYỂN ĐỔI
+// CORS configuration - PRODUCTION READY
 const corsOptions = {
     origin: function (origin, callback) {
         const allowedOrigins = [
@@ -49,22 +49,23 @@ const corsOptions = {
             'http://127.0.0.1:3000',
             
             // Production - THÊM DOMAINS THẬT CỦA BẠN
-            'https://cocktail-miami.vercel.app',
+            'https://cocktail-miami.vercel.app', // ✅ ĐÚNG DOMAIN VERCEL
             'https://cocktail-miami.onrender.com',
             
             // Environment variables
             process.env.FRONTEND_URL,
             process.env.FRONTEND_URL_PRODUCTION,
             
-            // Pattern for preview deployments
+            // Pattern for preview deployments - QUAN TRỌNG CHO VERCEL
             /^https:\/\/cocktail-miami.*\.vercel\.app$/,
             /^https:\/\/.*\.onrender\.com$/,
             
         ].filter(Boolean);
 
-       
+        console.log('🌐 CORS Check - Origin:', origin);
+        console.log('🌐 CORS Check - Allowed:', allowedOrigins);
 
-        // Allow requests with no origin (mobile apps, Postman, etc.)
+        // Allow requests with no origin (mobile apps, curl, etc.)
         if (!origin) {
             console.log('✅ CORS: No origin - allowing');
             return callback(null, true);
@@ -74,8 +75,10 @@ const corsOptions = {
         const isAllowed = allowedOrigins.some(allowedOrigin => {
             if (typeof allowedOrigin === 'string') {
                 return allowedOrigin === origin;
+            } else if (allowedOrigin instanceof RegExp) {
+                return allowedOrigin.test(origin);
             }
-            return allowedOrigin.test(origin);
+            return false;
         });
 
         if (isAllowed) {
@@ -95,14 +98,16 @@ const corsOptions = {
         'Authorization', 
         'X-Requested-With',
         'Accept',
-        'Origin'
+        'Origin',
+        'Cache-Control',
+        'Pragma'
     ],
-    optionsSuccessStatus: 200
+    optionsSuccessStatus: 200 // For legacy browser support
 };
 
 app.use(cors(corsOptions));
 
-// Handle preflight requests explicitly
+// Pre-flight requests handler
 app.options('*', cors(corsOptions));
 
 // Body parsing middleware
@@ -213,4 +218,17 @@ process.on('SIGTERM', () => {
 process.on('SIGINT', () => {
     console.log('SIGINT received. Shutting down gracefully...');
     process.exit(0);
+});
+
+// CORS debugging middleware
+app.use((req, res, next) => {
+    if (process.env.DEBUG_CORS === 'true') {
+        console.log('🔍 Request Info:');
+        console.log('Method:', req.method);
+        console.log('Origin:', req.get('Origin'));
+        console.log('Host:', req.get('Host'));
+        console.log('User-Agent:', req.get('User-Agent'));
+        console.log('Headers:', JSON.stringify(req.headers, null, 2));
+    }
+    next();
 });
