@@ -15,60 +15,24 @@ export default function AdminDashboard() {
 
     const fetchDashboardData = useCallback(async () => {
         try {
+            setLoading(true);
             const token = localStorage.getItem('token');
             
-            // Fetch products
-            const productsResponse = await fetch(`${API_URL}/api/products?limit=5`, {
+            // ✅ Use the dashboard stats endpoint
+            const dashboardResponse = await fetch(`${API_URL}/api/admin/dashboard/stats`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            const productsData = await productsResponse.json();
+            const dashboardData = await dashboardResponse.json();
 
-            // Fetch categories
-            const categoriesResponse = await fetch(`${API_URL}/api/categories`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const categoriesData = await categoriesResponse.json();
-
-            // Fetch users count
-            const usersResponse = await fetch(`${API_URL}/api/admin/users?limit=1`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const usersData = await usersResponse.json();
-
-            // Fetch orders count (if available)
-            // const ordersResponse = await fetch(`${API_URL}/api/admin/orders?limit=1`, {
-            //     headers: { 'Authorization': `Bearer ${token}` }
-            // });
-            // const ordersData = await ordersResponse.json();
-
-            if (productsData.success) {
-                setRecentProducts(productsData.data);
-                setStats(prev => ({ 
-                    ...prev, 
-                    totalProducts: productsData.total || productsData.data.length 
-                }));
+            if (dashboardData.success) {
+                setStats({
+                    totalProducts: dashboardData.data.totalProducts,
+                    totalCategories: dashboardData.data.totalCategories,
+                    totalUsers: dashboardData.data.totalUsers,
+                    totalOrders: dashboardData.data.totalOrders
+                });
+                setRecentProducts(dashboardData.data.recentProducts);
             }
-
-            if (categoriesData.success) {
-                setStats(prev => ({ 
-                    ...prev, 
-                    totalCategories: categoriesData.count || categoriesData.data.length 
-                }));
-            }
-
-            if (usersData.success) {
-                setStats(prev => ({ 
-                    ...prev, 
-                    totalUsers: usersData.total || 0
-                }));
-            }
-
-            // if (ordersData.success) {
-            //     setStats(prev => ({ 
-            //         ...prev, 
-            //         totalOrders: ordersData.total || 0
-            //     }));
-            // }
 
         } catch (error) {
             console.error('Failed to fetch dashboard data:', error);
@@ -151,7 +115,7 @@ export default function AdminDashboard() {
                 </Link>
 
                 {/* Orders Card */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 opacity-50">
+                <Link to="/admin/orders" className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
                     <div className="flex items-center">
                         <div className="flex-shrink-0">
                             <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
@@ -163,10 +127,9 @@ export default function AdminDashboard() {
                         <div className="ml-4">
                             <p className="text-sm font-medium text-gray-600">Orders</p>
                             <p className="text-2xl font-semibold text-gray-900">{stats.totalOrders}</p>
-                            <p className="text-xs text-gray-400">Coming soon</p>
                         </div>
                     </div>
-                </div>
+                </Link>
             </div>
 
             {/* Quick Actions */}
@@ -246,7 +209,7 @@ export default function AdminDashboard() {
                                             </div>
                                         )}
                                     </div>
-                                    <div className="ml-3 flex-1">
+                                    <div className="ml-3 flex-1 text-left">
                                         <p className="text-sm font-medium text-gray-900 truncate">
                                             {product.name}
                                         </p>
@@ -279,28 +242,7 @@ export default function AdminDashboard() {
                 </div>
             </div>
 
-            {/* System Status */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">System Overview</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="text-center">
-                        <div className="text-2xl font-bold text-green-600">{stats.totalProducts}</div>
-                        <div className="text-sm text-gray-500">Products</div>
-                    </div>
-                    <div className="text-center">
-                        <div className="text-2xl font-bold text-blue-600">{stats.totalCategories}</div>
-                        <div className="text-sm text-gray-500">Categories</div>
-                    </div>
-                    <div className="text-center">
-                        <div className="text-2xl font-bold text-purple-600">{stats.totalUsers}</div>
-                        <div className="text-sm text-gray-500">Registered Users</div>
-                    </div>
-                    <div className="text-center">
-                        <div className="text-2xl font-bold text-gray-400">{stats.totalOrders}</div>
-                        <div className="text-sm text-gray-500">Orders (Soon)</div>
-                    </div>
-                </div>
-            </div>
+            
         </div>
     );
 }

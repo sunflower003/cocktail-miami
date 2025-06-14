@@ -85,9 +85,14 @@ const orderSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Calculate final total
+// ✅ Calculate final total correctly
 orderSchema.virtual('finalTotal').get(function() {
-    return this.totalPrice + this.shippingFee + this.tax;
+    const subtotal = this.totalPrice || 0;
+    const shipping = this.shippingFee || 0;
+    const tax = this.tax || 0;
+    const discount = this.discountAmount || 0;
+    
+    return Math.round((subtotal + shipping + tax - discount) * 100) / 100;
 });
 
 // Ensure virtual fields are serialized

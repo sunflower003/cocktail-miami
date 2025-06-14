@@ -188,7 +188,7 @@ export default function UserManagement() {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-left">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
                     <p className="text-gray-600">Manage system users and their permissions</p>
@@ -225,7 +225,7 @@ export default function UserManagement() {
 
             {/* Filters */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-left">
                     {/* Search */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
@@ -328,7 +328,7 @@ export default function UserManagement() {
                                 </th>
                             </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
+                        <tbody className="bg-white divide-y divide-gray-200 text-left">
                             {users.map((user) => (
                                 <tr key={user._id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 whitespace-nowrap">

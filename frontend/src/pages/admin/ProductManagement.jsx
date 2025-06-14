@@ -43,7 +43,7 @@ export default function Products() {
                 setError(data.message);
             }
         } catch (error) {
-            setError('Failed to fetch products');
+            setError(error.message || 'Failed to fetch products');
         } finally {
             setLoading(false);
         }
@@ -57,7 +57,7 @@ export default function Products() {
                 setCategories(data.data);
             }
         } catch (error) {
-            console.error('Failed to fetch categories');
+            console.error(error.message || 'Failed to fetch categories');
         }
     };
 
@@ -82,7 +82,7 @@ export default function Products() {
                 setError(data.message);
             }
         } catch (error) {
-            setError('Failed to delete product');
+            setError( error.message || 'Failed to delete product');
         }
     };
 
@@ -209,7 +209,7 @@ export default function Products() {
                                                     </div>
                                                 )}
                                             </div>
-                                            <div className="ml-4">
+                                            <div className="ml-4 text-left">
                                                 <div className="text-sm font-medium text-gray-900">
                                                     {product.name}
                                                 </div>
@@ -219,13 +219,13 @@ export default function Products() {
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-left">
                                         {product.category?.name || 'No Category'}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-left">
                                         ${product.price.toFixed(2)}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
+                                    <td className="px-6 py-4 whitespace-nowrap text-left">
                                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                                             product.stock === 0 
                                                 ? 'bg-red-100 text-red-800'

@@ -29,6 +29,10 @@ import EditProduct from './pages/admin/EditProduct.jsx';
 import CategoryManagement from './pages/admin/CategoryManagement.jsx';
 import UserManagement from './pages/admin/UserManagement.jsx';
 import UserDetail from './pages/admin/UserDetail.jsx';
+import OrderManagement from './pages/admin/OrderManagement';
+import OrderDetail from './pages/admin/OrderDetail';
+
+
 import './App.css';
 
 function App() {
@@ -68,6 +72,8 @@ function App() {
               <Route path="categories" element={<CategoryManagement />} />
               <Route path="users" element={<UserManagement />} />
               <Route path="users/:id" element={<UserDetail />} />
+              <Route path="orders" element={<OrderManagement />} />
+              <Route path="orders/:id" element={<OrderDetail />} />
             </Route>
           </Routes>
         </CartProvider> {/* ĐÓNG CARTPROVIDER */}

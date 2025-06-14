@@ -125,10 +125,10 @@ export default function Orders() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen py-8">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-8 text-left">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">My Orders</h1>
           <p className="text-gray-600">Track and manage your orders</p>
         </div>
@@ -147,7 +147,7 @@ export default function Orders() {
             </Link>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-6 text-left">
             {orders.map((order) => (
               <div key={order._id} className="bg-white rounded-lg shadow-md overflow-hidden">
                 {/* Order Header */}
@@ -200,7 +200,7 @@ export default function Orders() {
                         <img
                           src={item.product?.images?.[0]?.url || '/img/default-product.png'}
                           alt={item.name}
-                          className="w-full h-20 object-cover rounded-lg mb-2"
+                          className="w-full h-20 object-cover rounded-lg mb-2 img-order"
                         />
                         <p className="text-xs text-gray-600 truncate">{item.name}</p>
                         <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
@@ -226,7 +226,7 @@ export default function Orders() {
                         ({order.isPaid ? 'Paid' : 'Pending'})
                       </span>
                     </div>
-                    <div className="text-lg font-bold text-gray-900">
+                    <div className="text-lg font-semibold">
                       ${order.finalTotal.toFixed(2)}
                     </div>
                   </div>

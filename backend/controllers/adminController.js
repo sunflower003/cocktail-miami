@@ -1,315 +1,494 @@
-
+const Product = require('../models/Product');
+const Category = require('../models/Category');
 const User = require('../models/User');
+const Order = require('../models/Order');
+const { deleteImage } = require('../config/cloudinary');
 
-// @desc    Get all users with pagination and filters
-// @route   GET /api/admin/users
+// ====================================
+// PRODUCT MANAGEMENT
+// ====================================
+
+// @desc    Get all products for admin
+// @route   GET /api/admin/products
 // @access  Private/Admin
-const getUsers = async (req, res) => {
+const getAllProducts = async (req, res) => {
     try {
-        const {
-            search = '',
-            role = '',
-            status = '',
-            verified = '',
-            page = 1,
-            limit = 10
-        } = req.query;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
 
-        // Build query
-        let query = {};
+        let filter = {};
+        
+        if (req.query.category) {
+            filter.category = req.query.category;
+        }
+        
+        if (req.query.featured !== undefined) {
+            filter.isFeatured = req.query.featured === 'true';
+        }
 
-        // Search by name or email
-        if (search) {
-            query.$or = [
-                { name: { $regex: search, $options: 'i' } },
-                { email: { $regex: search, $options: 'i' } }
+        if (req.query.search) {
+            filter.$or = [
+                { name: { $regex: req.query.search, $options: 'i' } },
+                { description: { $regex: req.query.search, $options: 'i' } }
             ];
         }
 
-        // Filter by role
-        if (role) {
-            query.role = role;
-        }
-
-        // Filter by status (blocked/active)
-        if (status) {
-            query.isBlocked = status === 'blocked';
-        }
-
-        // Filter by email verification
-        if (verified !== '') {
-            query.isEmailVerified = verified === 'true';
-        }
-
-        // Calculate pagination
-        const pageNum = parseInt(page);
-        const limitNum = parseInt(limit);
-        const skip = (pageNum - 1) * limitNum;
-
-        // Get total count for pagination
-        const total = await User.countDocuments(query);
-        const totalPages = Math.ceil(total / limitNum);
-
-        // Get users
-        const users = await User.find(query)
-            .select('-passwordHash') // Exclude password
+        const products = await Product.find(filter)
+            .populate('category', 'name')
             .sort({ createdAt: -1 })
             .skip(skip)
-            .limit(limitNum);
+            .limit(limit);
+
+        const total = await Product.countDocuments(filter);
 
         res.json({
             success: true,
-            data: {
-                users,
-                total,
-                totalPages,
-                currentPage: pageNum,
-                limit: limitNum
+            data: products,
+            total,
+            pages: Math.ceil(total / limit),
+            currentPage: page
+        });
+    } catch (error) {
+        console.error('Get all products error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error'
+        });
+    }
+};
+
+// @desc    Get single product for admin
+// @route   GET /api/admin/products/:id
+// @access  Private/Admin
+const getProductById = async (req, res) => {
+    try {
+        const product = await Product.findById(req.params.id)
+            .populate('category', 'name');
+
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            data: product
+        });
+    } catch (error) {
+        console.error('Get product error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error'
+        });
+    }
+};
+
+// @desc    Create product
+// @route   POST /api/admin/products
+// @access  Private/Admin
+const createProduct = async (req, res) => {
+    try {
+        const {
+            name, description, subDescription, price, company,
+            category, stock, abv, color, country, region, isFeatured, tags
+        } = req.body;
+
+        const images = [];
+        const backgroundImages = [];
+
+        if (req.files) {
+            if (req.files.images) {
+                req.files.images.forEach(file => {
+                    images.push({
+                        url: file.path,
+                        publicId: file.filename
+                    });
+                });
             }
-        });
 
-    } catch (error) {
-        console.error('Get users error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Internal server error',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
-    }
-};
-
-// @desc    Get single user by ID
-// @route   GET /api/admin/users/:id
-// @access  Private/Admin
-const getUserById = async (req, res) => {
-    try {
-        const user = await User.findById(req.params.id).select('-passwordHash');
-        
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found'
-            });
+            if (req.files.backgroundImages) {
+                req.files.backgroundImages.forEach(file => {
+                    backgroundImages.push({
+                        url: file.path,
+                        publicId: file.filename
+                    });
+                });
+            }
         }
 
-        res.json({
+        const product = await Product.create({
+            name, description, subDescription,
+            price: parseFloat(price), company, category, images,
+            stock: parseInt(stock), abv: abv ? parseFloat(abv) : undefined,
+            color, country, region, isFeatured: isFeatured === 'true',
+            backgroundImages, tags: tags ? tags.split(',').map(tag => tag.trim()) : []
+        });
+
+        const populatedProduct = await Product.findById(product._id)
+            .populate('category', 'name');
+
+        res.status(201).json({
             success: true,
-            data: user
+            message: 'Product created successfully',
+            data: populatedProduct
         });
-
     } catch (error) {
-        console.error('Get user by ID error:', error);
+        console.error('Create product error:', error);
         res.status(500).json({
             success: false,
-            message: 'Internal server error',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            message: 'Internal server error'
         });
     }
 };
 
-// @desc    Update user
-// @route   PUT /api/admin/users/:id
+// @desc    Update product
+// @route   PUT /api/admin/products/:id
 // @access  Private/Admin
-const updateUser = async (req, res) => {
+const updateProduct = async (req, res) => {
     try {
-        const { name, email, phone, role, isBlocked, isEmailVerified } = req.body;
+        const product = await Product.findById(req.params.id);
         
-        const user = await User.findById(req.params.id);
-        if (!user) {
+        if (!product) {
             return res.status(404).json({
                 success: false,
-                message: 'User not found'
+                message: 'Product not found'
             });
         }
 
-        // Check if email is being changed and if it already exists
-        if (email && email !== user.email) {
-            const existingUser = await User.findOne({ email, _id: { $ne: req.params.id } });
-            if (existingUser) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Email already exists'
+        const {
+            name, description, subDescription, price, company,
+            category, stock, abv, color, country, region, isFeatured,
+            tags, removeImages, removeBackgroundImages
+        } = req.body;
+
+        // Remove specified images
+        if (removeImages) {
+            const imagesToRemove = JSON.parse(removeImages);
+            for (const publicId of imagesToRemove) {
+                await deleteImage(publicId);
+                product.images = product.images.filter(img => img.publicId !== publicId);
+            }
+        }
+
+        if (removeBackgroundImages) {
+            const backgroundImagesToRemove = JSON.parse(removeBackgroundImages);
+            for (const publicId of backgroundImagesToRemove) {
+                await deleteImage(publicId);
+                product.backgroundImages = product.backgroundImages.filter(img => img.publicId !== publicId);
+            }
+        }
+
+        // Add new images
+        if (req.files) {
+            if (req.files.images) {
+                req.files.images.forEach(file => {
+                    product.images.push({
+                        url: file.path,
+                        publicId: file.filename
+                    });
+                });
+            }
+
+            if (req.files.backgroundImages) {
+                req.files.backgroundImages.forEach(file => {
+                    product.backgroundImages.push({
+                        url: file.path,
+                        publicId: file.filename
+                    });
                 });
             }
         }
 
         // Update fields
-        if (name !== undefined) user.name = name;
-        if (email !== undefined) user.email = email;
-        if (phone !== undefined) user.phone = phone;
-        if (role !== undefined) user.role = role;
-        if (isBlocked !== undefined) user.isBlocked = isBlocked;
-        if (isEmailVerified !== undefined) user.isEmailVerified = isEmailVerified;
+        if (name !== undefined) product.name = name;
+        if (description !== undefined) product.description = description;
+        if (subDescription !== undefined) product.subDescription = subDescription;
+        if (price !== undefined) product.price = parseFloat(price);
+        if (company !== undefined) product.company = company;
+        if (category !== undefined) product.category = category;
+        if (stock !== undefined) product.stock = parseInt(stock);
+        if (abv !== undefined) product.abv = abv ? parseFloat(abv) : undefined;
+        if (color !== undefined) product.color = color;
+        if (country !== undefined) product.country = country;
+        if (region !== undefined) product.region = region;
+        if (isFeatured !== undefined) product.isFeatured = isFeatured === 'true';
+        if (tags !== undefined) product.tags = tags.split(',').map(tag => tag.trim());
 
-        await user.save();
+        await product.save();
+
+        const updatedProduct = await Product.findById(product._id)
+            .populate('category', 'name');
 
         res.json({
             success: true,
-            message: 'User updated successfully',
-            data: user.toJSON()
+            message: 'Product updated successfully',
+            data: updatedProduct
         });
-
     } catch (error) {
-        console.error('Update user error:', error);
+        console.error('Update product error:', error);
         res.status(500).json({
             success: false,
-            message: 'Internal server error',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            message: 'Internal server error'
         });
     }
 };
 
-// @desc    Delete user
-// @route   DELETE /api/admin/users/:id
+// @desc    Delete product
+// @route   DELETE /api/admin/products/:id
 // @access  Private/Admin
-const deleteUser = async (req, res) => {
+const deleteProduct = async (req, res) => {
     try {
-        const user = await User.findById(req.params.id);
+        const product = await Product.findById(req.params.id);
         
-        if (!user) {
+        if (!product) {
             return res.status(404).json({
                 success: false,
-                message: 'User not found'
+                message: 'Product not found'
             });
         }
 
-        // Prevent deleting admin users
-        if (user.role === 'admin') {
-            return res.status(403).json({
-                success: false,
-                message: 'Cannot delete admin users'
-            });
+        // Delete all images from Cloudinary
+        for (const image of product.images) {
+            await deleteImage(image.publicId);
         }
 
-        // Prevent admin from deleting themselves
-        if (user._id.toString() === req.user.userId) {
-            return res.status(403).json({
-                success: false,
-                message: 'Cannot delete your own account'
-            });
+        for (const backgroundImage of product.backgroundImages) {
+            await deleteImage(backgroundImage.publicId);
         }
 
-        await User.findByIdAndDelete(req.params.id);
+        await Product.findByIdAndDelete(req.params.id);
 
         res.json({
             success: true,
-            message: 'User deleted successfully'
+            message: 'Product deleted successfully'
         });
-
     } catch (error) {
-        console.error('Delete user error:', error);
+        console.error('Delete product error:', error);
         res.status(500).json({
             success: false,
-            message: 'Internal server error',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            message: 'Internal server error'
         });
     }
 };
 
-// @desc    Toggle user status (block/unblock)
-// @route   PUT /api/admin/users/:id/toggle-status
+// ====================================
+// CATEGORY MANAGEMENT
+// ====================================
+
+// @desc    Get all categories for admin
+// @route   GET /api/admin/categories
 // @access  Private/Admin
-const toggleUserStatus = async (req, res) => {
+const getAllCategories = async (req, res) => {
     try {
-        const user = await User.findById(req.params.id);
+        const categories = await Category.find().sort({ name: 1 });
+
+        res.json({
+            success: true,
+            count: categories.length,
+            data: categories
+        });
+    } catch (error) {
+        console.error('Get categories error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error'
+        });
+    }
+};
+
+// @desc    Get single category
+// @route   GET /api/admin/categories/:id
+// @access  Private/Admin
+const getCategoryById = async (req, res) => {
+    try {
+        const category = await Category.findById(req.params.id);
         
-        if (!user) {
+        if (!category) {
             return res.status(404).json({
                 success: false,
-                message: 'User not found'
+                message: 'Category not found'
             });
         }
-
-        // Prevent blocking admin users
-        if (user.role === 'admin') {
-            return res.status(403).json({
-                success: false,
-                message: 'Cannot block admin users'
-            });
-        }
-
-        // Prevent admin from blocking themselves
-        if (user._id.toString() === req.user.userId) {
-            return res.status(403).json({
-                success: false,
-                message: 'Cannot block your own account'
-            });
-        }
-
-        user.isBlocked = !user.isBlocked;
-        await user.save();
 
         res.json({
             success: true,
-            message: `User ${user.isBlocked ? 'blocked' : 'unblocked'} successfully`,
-            data: user.toJSON()
+            data: category
         });
-
     } catch (error) {
-        console.error('Toggle user status error:', error);
+        console.error('Get category error:', error);
         res.status(500).json({
             success: false,
-            message: 'Internal server error',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            message: 'Internal server error'
         });
     }
 };
 
-// @desc    Update user role
-// @route   PUT /api/admin/users/:id/role
+// @desc    Create category
+// @route   POST /api/admin/categories
 // @access  Private/Admin
-const updateUserRole = async (req, res) => {
+const createCategory = async (req, res) => {
     try {
-        const { role } = req.body;
+        const { name, description } = req.body;
+
+        const category = await Category.create({ name, description });
+
+        res.status(201).json({
+            success: true,
+            message: 'Category created successfully',
+            data: category
+        });
+    } catch (error) {
+        console.error('Create category error:', error);
         
-        if (!role || !['user', 'admin'].includes(role)) {
+        if (error.code === 11000) {
             return res.status(400).json({
                 success: false,
-                message: 'Valid role is required (user or admin)'
+                message: 'Category name already exists'
             });
         }
 
-        const user = await User.findById(req.params.id);
-        
-        if (!user) {
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error'
+        });
+    }
+};
+
+// @desc    Update category
+// @route   PUT /api/admin/categories/:id
+// @access  Private/Admin
+const updateCategory = async (req, res) => {
+    try {
+        const { name, description, isActive } = req.body;
+
+        const category = await Category.findByIdAndUpdate(
+            req.params.id,
+            { name, description, isActive },
+            { new: true, runValidators: true }
+        );
+
+        if (!category) {
             return res.status(404).json({
                 success: false,
-                message: 'User not found'
+                message: 'Category not found'
             });
         }
-
-        // Prevent admin from changing their own role
-        if (user._id.toString() === req.user.userId) {
-            return res.status(403).json({
-                success: false,
-                message: 'Cannot change your own role'
-            });
-        }
-
-        user.role = role;
-        await user.save();
 
         res.json({
             success: true,
-            message: 'User role updated successfully',
-            data: user.toJSON()
+            message: 'Category updated successfully',
+            data: category
         });
-
     } catch (error) {
-        console.error('Update user role error:', error);
+        console.error('Update category error:', error);
         res.status(500).json({
             success: false,
-            message: 'Internal server error',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            message: 'Internal server error'
+        });
+    }
+};
+
+// @desc    Delete category
+// @route   DELETE /api/admin/categories/:id
+// @access  Private/Admin
+const deleteCategory = async (req, res) => {
+    try {
+        const category = await Category.findById(req.params.id);
+        
+        if (!category) {
+            return res.status(404).json({
+                success: false,
+                message: 'Category not found'
+            });
+        }
+
+        const productsCount = await Product.countDocuments({ category: req.params.id });
+        
+        if (productsCount > 0) {
+            return res.status(400).json({
+                success: false,
+                message: `Cannot delete category. It is being used by ${productsCount} product(s)`
+            });
+        }
+
+        await Category.findByIdAndDelete(req.params.id);
+
+        res.json({
+            success: true,
+            message: 'Category deleted successfully'
+        });
+    } catch (error) {
+        console.error('Delete category error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error'
+        });
+    }
+};
+
+// ====================================
+// DASHBOARD STATS
+// ====================================
+
+// @desc    Get dashboard statistics
+// @route   GET /api/admin/dashboard/stats
+// @access  Private/Admin
+const getDashboardStats = async (req, res) => {
+    try {
+        const [
+            totalProducts,
+            totalCategories,
+            totalUsers,
+            totalOrders,
+            recentProducts
+        ] = await Promise.all([
+            Product.countDocuments(),
+            Category.countDocuments(),
+            User.countDocuments(),
+            Order.countDocuments(),
+            Product.find()
+                .populate('category', 'name')
+                .sort({ createdAt: -1 })
+                .limit(5)
+        ]);
+
+        res.json({
+            success: true,
+            data: {
+                totalProducts,
+                totalCategories,
+                totalUsers,
+                totalOrders,
+                recentProducts
+            }
+        });
+    } catch (error) {
+        console.error('Get dashboard stats error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error'
         });
     }
 };
 
 module.exports = {
-    getUsers,
-    getUserById,
-    updateUser,
-    deleteUser,
-    toggleUserStatus,
-    updateUserRole
+    // Product management
+    getAllProducts,
+    getProductById,
+    createProduct,
+    updateProduct,
+    deleteProduct,
+    
+    // Category management
+    getAllCategories,
+    getCategoryById,
+    createCategory,
+    updateCategory,
+    deleteCategory,
+    
+    // Dashboard
+    getDashboardStats
 };
