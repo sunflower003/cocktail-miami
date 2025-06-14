@@ -106,18 +106,24 @@ const clearUserCart = async (userId) => {
 // ✅ MAIN CONTROLLER FUNCTIONS
 const handlePayOSWebhook = async (req, res) => {
     try {
-        // ✅ Giảm logging, tăng tốc processing
         const webhookData = req.body;
+        console.log('📨 PayOS Webhook received:', JSON.stringify(webhookData, null, 2));
+        
         let orderCode, status, transactionId;
         
         if (webhookData.data) {
             const data = webhookData.data;
             orderCode = data.orderCode;
             
+            // ✅ XỬ LÝ CÁC TRẠNG THÁI KHÁC NHAU
             if (webhookData.code === "00" && webhookData.desc === "success") {
                 status = "PAID";
+            } else if (webhookData.code === "01" && webhookData.desc === "cancelled") {
+                status = "CANCELLED";
+            } else if (webhookData.code === "02" && webhookData.desc === "processing") {
+                status = "PROCESSING"; // Đang xử lý, giữ nguyên status pending
             } else {
-                status = "FAILED";
+                status = "CANCELLED"; // Các trường hợp khác đều coi như cancelled
             }
             
             transactionId = data.reference || data.paymentLinkId;
@@ -129,38 +135,43 @@ const handlePayOSWebhook = async (req, res) => {
             return res.status(200).json({ success: true });
         }
 
-        // ✅ Sử dụng findOneAndUpdate để atomic operation
-        const updateData = status === 'PAID' ? {
-            isPaid: true,
-            paidAt: new Date(),
-            status: 'processing',
-            'paymentInfo.payosStatus': 'PAID',
-            'paymentInfo.payosTransactionId': transactionId
-        } : {
-            status: 'cancelled',
-            'paymentInfo.payosStatus': 'FAILED'
-        };
+        // ✅ CHỈ UPDATE NẾU KHÔNG PHẢI PROCESSING
+        if (status !== "PROCESSING") {
+            const updateData = status === 'PAID' ? {
+                isPaid: true,
+                paidAt: new Date(),
+                status: 'processing',
+                'paymentInfo.payosStatus': 'PAID',
+                'paymentInfo.payosTransactionId': transactionId
+            } : {
+                status: 'cancelled',
+                cancelledAt: new Date(),
+                cancelReason: 'Payment cancelled/failed',
+                'paymentInfo.payosStatus': 'CANCELLED'
+            };
 
-        const order = await Order.findOneAndUpdate(
-            { 
-                'paymentInfo.payosOrderCode': orderCode.toString(),
-                isPaid: false // Chỉ update nếu chưa paid
-            },
-            updateData,
-            { new: true }
-        );
+            const order = await Order.findOneAndUpdate(
+                { 
+                    'paymentInfo.payosOrderCode': orderCode.toString(),
+                    isPaid: false
+                },
+                updateData,
+                { new: true }
+            );
 
-        if (order && status === 'PAID') {
-            // ✅ Update stock sau khi đã update order
-            await updateProductStock(order.items);
-            console.log(`✅ Order ${order._id} processed successfully`);
+            if (order && status === 'PAID') {
+                await updateProductStock(order.items);
+                console.log(`✅ Order ${order._id} processed successfully`);
+            } else if (order && status === 'CANCELLED') {
+                console.log(`🚫 Order ${order._id} cancelled via webhook`);
+            }
         }
 
         res.status(200).json({ success: true });
 
     } catch (error) {
         console.error('❌ PayOS webhook error:', error);
-        res.status(200).json({ success: true }); // Luôn trả 200 để PayOS không retry
+        res.status(200).json({ success: true });
     }
 };
 
@@ -334,10 +345,59 @@ const getOrder = async (req, res) => {
     }
 };
 
+const cancelOrder = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.userId;
+
+        const order = await Order.findOne({ 
+            _id: id, 
+            user: userId,
+            status: { $nin: ['delivered', 'cancelled'] }, // Không cho phép cancel đơn đã delivered hoặc đã cancelled
+            isPaid: false // Chỉ cho phép cancel đơn chưa thanh toán
+        });
+
+        if (!order) {
+            return res.status(404).json({
+                success: false,
+                message: 'Order not found or cannot be cancelled'
+            });
+        }
+
+        // Cập nhật status thành cancelled
+        order.status = 'cancelled';
+        order.cancelledAt = new Date();
+        order.cancelReason = 'Cancelled by user';
+        
+        // Nếu là PayOS payment, cập nhật paymentInfo
+        if (order.paymentMethod === 'payos' && order.paymentInfo) {
+            order.paymentInfo.payosStatus = 'CANCELLED';
+        }
+
+        await order.save();
+
+        console.log(`🚫 Order ${order._id} cancelled by user`);
+
+        res.json({
+            success: true,
+            message: 'Order cancelled successfully',
+            data: order
+        });
+
+    } catch (error) {
+        console.error('Cancel order error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error'
+        });
+    }
+};
+
 module.exports = {
     createOrder,
     handlePayOSWebhook,
     getUserOrders,
     getOrder,
-    getShippingConfig
+    getShippingConfig,
+    cancelOrder // ✅ THÊM FUNCTION MỚI
 };

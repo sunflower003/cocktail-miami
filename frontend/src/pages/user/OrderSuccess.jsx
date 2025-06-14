@@ -8,6 +8,7 @@ export default function OrderSuccess() {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isCheckingPayment, setIsCheckingPayment] = useState(false); // ✅ THÊM STATE
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -21,6 +22,27 @@ export default function OrderSuccess() {
       setLoading(false);
     }
   }, [orderId]);
+
+  // ✅ THÊM EFFECT ĐỂ POLLING PAYMENT STATUS
+  useEffect(() => {
+    if (order && order.paymentMethod === 'payos' && !order.isPaid) {
+      console.log('🔄 Starting payment status polling...');
+      const pollPaymentStatus = setInterval(() => {
+        checkPaymentStatus();
+      }, 3000); // Check mỗi 3 giây
+
+      // Dừng polling sau 2 phút
+      const stopPolling = setTimeout(() => {
+        clearInterval(pollPaymentStatus);
+        console.log('⏰ Payment status polling stopped');
+      }, 120000); // 2 phút
+
+      return () => {
+        clearInterval(pollPaymentStatus);
+        clearTimeout(stopPolling);
+      };
+    }
+  }, [order]);
 
   const fetchOrder = async () => {
     try {
@@ -49,6 +71,45 @@ export default function OrderSuccess() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // ✅ THÊM FUNCTION CHECK PAYMENT STATUS
+  const checkPaymentStatus = async () => {
+    if (isCheckingPayment) return; // Tránh gọi đồng thời
+    
+    try {
+      setIsCheckingPayment(true);
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`${API_URL}/api/orders/${orderId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const result = await response.json();
+      
+      if (result.success && result.data.isPaid !== order?.isPaid) {
+        console.log('💰 Payment status updated!', result.data.isPaid);
+        setOrder(result.data);
+        
+        // Nếu đã thanh toán thành công, có thể hiển thị thông báo
+        if (result.data.isPaid) {
+          // Có thể thêm toast notification ở đây
+          console.log('✅ Payment confirmed!');
+        }
+      }
+    } catch (error) {
+      console.error('Error checking payment status:', error);
+    } finally {
+      setIsCheckingPayment(false);
+    }
+  };
+
+  // ✅ THÊM MANUAL REFRESH BUTTON
+  const handleRefreshPayment = () => {
+    setLoading(true);
+    fetchOrder();
   };
 
   const getStatusIcon = (status) => {
@@ -129,6 +190,32 @@ export default function OrderSuccess() {
           <p className="text-gray-600 text-lg">
             Thank you for your purchase. Your order has been received and is being processed.
           </p>
+          
+          {/* ✅ THÊM PAYMENT STATUS INDICATOR */}
+          {order && order.paymentMethod === 'payos' && (
+            <div className="mt-4">
+              {order.isPaid ? (
+                <div className="inline-flex items-center gap-2 bg-green-100 text-green-800 px-4 py-2 rounded-full">
+                  <CheckCircle className="w-4 h-4" />
+                  <span className="font-medium">Payment Confirmed</span>
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-2 bg-orange-100 text-orange-800 px-4 py-2 rounded-full">
+                  <Clock className="w-4 h-4" />
+                  <span className="font-medium">
+                    {isCheckingPayment ? 'Checking Payment...' : 'Payment Pending'}
+                  </span>
+                  <button
+                    onClick={handleRefreshPayment}
+                    disabled={loading}
+                    className="ml-2 text-orange-600 hover:text-orange-800 text-sm underline"
+                  >
+                    Refresh
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {order && (
@@ -255,19 +342,25 @@ export default function OrderSuccess() {
               </div>
             </div>
 
-            {/* PayOS Payment Instructions */}
+            {/* PayOS Payment Instructions - CẬP NHẬT */}
             {order.paymentMethod === 'payos' && !order.isPaid && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-blue-900 mb-2">Payment Instructions</h3>
+                <h3 className="text-lg font-semibold text-blue-900 mb-2">Payment Status</h3>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                    <span className="text-blue-800">Checking payment status...</span>
+                  </div>
+                </div>
                 <p className="text-blue-800 mb-4 text-left">
-                  Your order has been created successfully. If you were redirected before completing payment, 
-                  you can complete the payment using the information below:
+                  If you've completed the payment, it may take a few moments to reflect. 
+                  The page will automatically update when payment is confirmed.
                 </p>
                 <div className="bg-white rounded p-4 border text-left">
                   <p><strong>Order Code:</strong> {order.paymentInfo?.payosOrderCode}</p>
                   <p><strong>Amount:</strong> ${order.finalTotal.toFixed(2)}</p>
                   <p className="text-sm text-gray-600 mt-2">
-                    Please contact our support team if you need assistance with payment.
+                    Please contact our support team if payment doesn't update within 5 minutes.
                   </p>
                 </div>
               </div>

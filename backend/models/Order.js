@@ -80,7 +80,13 @@ const orderSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
-    notes: String
+    notes: String,
+    cancelledAt: {
+        type: Date
+    },
+    cancelReason: {
+        type: String
+    }
 }, {
     timestamps: true
 });

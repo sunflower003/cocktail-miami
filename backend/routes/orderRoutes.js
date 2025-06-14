@@ -5,7 +5,8 @@ const {
     handlePayOSWebhook,
     getUserOrders,
     getOrder,
-    getShippingConfig // ✅ IMPORT
+    getShippingConfig,
+    cancelOrder // ✅ THÊM IMPORT cancelOrder
 } = require('../controllers/orderController');
 
 const router = express.Router();
@@ -31,5 +32,8 @@ router.route('/')
 
 router.route('/:id')
     .get(getOrder);
+
+// ✅ THÊM ROUTE CANCEL ORDER Ở ĐÂY
+router.put('/:id/cancel', cancelOrder);
 
 module.exports = router;

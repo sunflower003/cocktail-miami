@@ -129,7 +129,7 @@ const OrderDetail = () => {
     }
 
     return (
-        <div className="p-6">
+        <div className="p-6 text-left">
             {/* Header */}
             <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-4">

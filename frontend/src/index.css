@@ -1049,3 +1049,30 @@ a {
 .img-order {
   height: auto !important
 }
+
+
+
+/*=============== SCROLL UP ===============*/
+.scrollup {
+  position: fixed;
+  right: 1rem;
+  bottom: -50%;
+  border: 2px solid var(--black);
+  border-radius: 5px;
+  background-color: hsla(0, 0%, 100%, .1);
+  padding: 5px 10px;
+  display: inline-flex;
+  font-size: 1.25rem;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px); /* For safari */
+  z-index: 1000;
+  transition: bottom .4s, transform .4s;
+}
+
+.scrollup:hover {
+  transform: translateY(-.25rem);
+}
+/* Show Scroll Up */
+.show-scroll {
+  bottom: 3rem;
+}

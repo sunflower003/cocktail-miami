@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Package, Truck, CheckCircle, Clock, Eye, ShoppingBag } from 'lucide-react';
+import { Package, Truck, CheckCircle, Clock, Eye, ShoppingBag, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function Orders() {
@@ -72,6 +72,8 @@ export default function Orders() {
         return <Truck className="w-5 h-5 text-purple-500" />;
       case 'delivered':
         return <CheckCircle className="w-5 h-5 text-green-500" />;
+      case 'cancelled':
+        return <X className="w-5 h-5 text-red-500" />;
       default:
         return <Clock className="w-5 h-5 text-gray-500" />;
     }
@@ -83,6 +85,7 @@ export default function Orders() {
       case 'processing': return 'Processing';
       case 'shipped': return 'Shipped';
       case 'delivered': return 'Delivered';
+      case 'cancelled': return 'Cancelled';
       default: return 'Unknown';
     }
   };
@@ -93,6 +96,7 @@ export default function Orders() {
       case 'processing': return 'bg-blue-100 text-blue-800';
       case 'shipped': return 'bg-purple-100 text-purple-800';
       case 'delivered': return 'bg-green-100 text-green-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -170,7 +174,11 @@ export default function Orders() {
                         {getStatusText(order.status)}
                       </span>
                       <Link
-                        to={`/order-success/${order._id}`}
+                        to={
+                          order.status === 'cancelled' 
+                            ? `/order-cancelled/${order._id}`
+                            : `/order-success/${order._id}`
+                        }
                         className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors"
                       >
                         <Eye className="w-4 h-4" />
