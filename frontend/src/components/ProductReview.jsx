@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import Toast from './Toast';
 
 const ProductReviews = ({ productId }) => {
   const { user } = useAuth();
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showReviewForm, setShowReviewForm] = useState(false);
+  const [editingReview, setEditingReview] = useState(null);
   const [newReview, setNewReview] = useState({
     rating: 5,
     title: '',
@@ -17,195 +19,198 @@ const ProductReviews = ({ productId }) => {
     totalReviews: 0,
     ratingDistribution: [0, 0, 0, 0, 0]
   });
+  const [pagination, setPagination] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [sortBy, setSortBy] = useState('newest');
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const [userReview, setUserReview] = useState(null);
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-  // Mock data for testing
-  const mockReviews = useMemo(() => [
-    {
-      _id: '1',
-      user: {
-        name: 'Sarah Johnson'
-      },
-      rating: 5,
-      title: 'Absolutely Amazing!',
-      comment: 'This cocktail exceeded my expectations. The flavor is perfectly balanced and refreshing. I\'ve ordered it multiple times and it\'s consistently excellent. Highly recommend for anyone who loves quality cocktails!',
-      createdAt: '2024-06-10T10:30:00Z'
-    },
-    {
-      _id: '2',
-      user: {
-        name: 'Mike Chen'
-      },
-      rating: 4,
-      title: 'Great taste, quick delivery',
-      comment: 'Really enjoyed this cocktail. The organic ingredients really make a difference in taste. Only minor complaint is that I wish it came in larger bottles. Will definitely order again.',
-      createdAt: '2024-06-08T15:45:00Z'
-    },
-    {
-      _id: '3',
-      user: {
-        name: 'Emily Rodriguez'
-      },
-      rating: 5,
-      title: 'Perfect for summer parties',
-      comment: 'Bought this for a summer BBQ and everyone loved it! The spritz is light, refreshing, and not too sweet. The packaging is also beautiful. Great product overall.',
-      createdAt: '2024-06-05T20:15:00Z'
-    },
-    {
-      _id: '4',
-      user: {
-        name: 'David Wilson'
-      },
-      rating: 3,
-      title: 'Good but not exceptional',
-      comment: 'It\'s a decent cocktail but I\'ve had better. The price point is reasonable and quality is good, but the flavor didn\'t wow me as much as I hoped.',
-      createdAt: '2024-06-03T12:20:00Z'
-    },
-    {
-      _id: '5',
-      user: {
-        name: 'Lisa Thompson'
-      },
-      rating: 5,
-      title: 'My new favorite!',
-      comment: 'I\'m obsessed with this cocktail! The organic blood orange flavor is incredible and it\'s the perfect alcohol content. I\'ve already recommended it to all my friends.',
-      createdAt: '2024-06-01T18:30:00Z'
-    }
-  ], []);
+  // Show toast
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
+  };
 
-  const mockStats = useMemo(() => ({
-    averageRating: 4.4,
-    totalReviews: 5,
-    ratingDistribution: [0, 0, 1, 1, 3] // [1-star, 2-star, 3-star, 4-star, 5-star]
-  }), []);
-
-  // Fetch reviews with mock data
-  useEffect(() => {
-    const fetchReviews = async () => {
-      try {
-        setLoading(true);
+  // Fetch reviews
+  const fetchReviews = async (page = 1) => {
+    try {
+      setLoading(true);
+      
+      const response = await fetch(
+        `${API_URL}/api/reviews/product/${productId}?page=${page}&limit=10&sort=${sortBy}`
+      );
+      const result = await response.json();
+      
+      if (result.success) {
+        setReviews(result.data.reviews);
+        setStats(result.data.stats);
+        setPagination(result.data.pagination);
         
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Use mock data for now
-        setReviews(mockReviews);
-        setStats(mockStats);
-        
-        // Uncomment below for real API call
-        /*
-        const response = await fetch(`${API_URL}/api/reviews/${productId}`);
-        const result = await response.json();
-        
-        if (result.success) {
-          setReviews(result.data.reviews || []);
-          setStats(result.data.stats || mockStats);
-        }
-        */
-        
-      } catch (error) {
-        console.error('Error fetching reviews:', error);
-        // Fallback to mock data on error
-        setReviews(mockReviews);
-        setStats(mockStats);
-      } finally {
-        setLoading(false);
+        // Check if current user has reviewed this product
+        const currentUserReview = result.data.reviews.find(
+          review => review.user._id === user?._id
+        );
+        setUserReview(currentUserReview);
+      } else {
+        showToast(result.message || 'Failed to load reviews', 'error');
       }
-    };
-
-    if (productId) {
-      fetchReviews();
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+      showToast('Failed to load reviews', 'error');
+    } finally {
+      setLoading(false);
     }
-  }, [productId, API_URL, mockReviews, mockStats]);
+  };
 
-  // Submit review
+  useEffect(() => {
+    if (productId) {
+      fetchReviews(currentPage);
+    }
+  }, [productId, currentPage, sortBy]);
+
+  // Submit review (create or update)
   const handleSubmitReview = async (e) => {
     e.preventDefault();
     if (!user) {
-      alert('Please login to submit a review');
+      showToast('Please login to submit a review', 'error');
       return;
     }
 
     try {
       setSubmitting(true);
-      
-      // Mock submission for testing
-      const mockNewReview = {
-        _id: Date.now().toString(),
-        user: {
-          name: user.name || 'Current User'
-        },
-        rating: newReview.rating,
-        title: newReview.title,
-        comment: newReview.comment,
-        createdAt: new Date().toISOString()
-      };
-
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      // Update reviews list
-      setReviews([mockNewReview, ...reviews]);
-      
-      // Update stats
-      setStats(prevStats => {
-        const newTotalReviews = prevStats.totalReviews + 1;
-        const newAverageRating = ((prevStats.averageRating * prevStats.totalReviews) + newReview.rating) / newTotalReviews;
-        const newRatingDistribution = [...prevStats.ratingDistribution];
-        newRatingDistribution[newReview.rating - 1]++;
-        
-        return {
-          averageRating: newAverageRating,
-          totalReviews: newTotalReviews,
-          ratingDistribution: newRatingDistribution
-        };
-      });
-
-      // Reset form
-      setNewReview({ rating: 5, title: '', comment: '' });
-      setShowReviewForm(false);
-      
-      // Uncomment below for real API call
-      /*
       const token = localStorage.getItem('token');
       
-      const response = await fetch(`${API_URL}/api/reviews`, {
-        method: 'POST',
+      const reviewData = {
+        product: productId,
+        ...newReview
+      };
+
+      const url = editingReview 
+        ? `${API_URL}/api/reviews/${editingReview._id}`
+        : `${API_URL}/api/reviews`;
+      
+      const method = editingReview ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          productId,
-          ...newReview
-        })
+        body: JSON.stringify(reviewData)
       });
 
       const result = await response.json();
       
       if (result.success) {
-        setReviews([result.data, ...reviews]);
+        showToast(
+          editingReview ? 'Review updated successfully' : 'Review submitted successfully',
+          'success'
+        );
+        
+        // Reset form and close
         setNewReview({ rating: 5, title: '', comment: '' });
         setShowReviewForm(false);
-        // Update stats...
+        setEditingReview(null);
+        
+        // Refresh reviews
+        fetchReviews(currentPage);
+      } else {
+        showToast(result.message || 'Failed to submit review', 'error');
       }
-      */
       
     } catch (error) {
       console.error('Error submitting review:', error);
-      alert('Failed to submit review. Please try again.');
+      showToast('Failed to submit review', 'error');
     } finally {
       setSubmitting(false);
     }
   };
+
+  // Delete review
+  const handleDeleteReview = async (reviewId) => {
+    if (!window.confirm('Are you sure you want to delete this review?')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`${API_URL}/api/reviews/${reviewId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        showToast('Review deleted successfully', 'success');
+        setUserReview(null);
+        fetchReviews(currentPage);
+      } else {
+        showToast(result.message || 'Failed to delete review', 'error');
+      }
+    } catch (error) {
+      console.error('Error deleting review:', error);
+      showToast('Failed to delete review', 'error');
+    }
+  };
+
+  // Edit review
+  const handleEditReview = (review) => {
+    setEditingReview(review);
+    setNewReview({
+      rating: review.rating,
+      title: review.title,
+      comment: review.comment
+    });
+    setShowReviewForm(true);
+  };
+
+  // Vote helpful
+  // const handleVoteHelpful = async (reviewId, type) => {
+  //   if (!user) {
+  //     showToast('Please login to vote', 'error');
+  //     return;
+  //   }
+
+  //   try {
+  //     const token = localStorage.getItem('token');
+      
+  //     const response = await fetch(`${API_URL}/api/reviews/${reviewId}/helpful`, {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //         'Authorization': `Bearer ${token}`
+  //       },
+  //       body: JSON.stringify({ type })
+  //     });
+
+  //     const result = await response.json();
+      
+  //     if (result.success) {
+  //       showToast('Vote recorded', 'success');
+  //       // Optionally refresh reviews to show updated vote counts
+  //       fetchReviews(currentPage);
+  //     } else {
+  //       showToast(result.message || 'Failed to vote', 'error');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error voting:', error);
+  //     showToast('Failed to vote', 'error');
+  //   }
+  // };
 
   // Render star rating
   const renderStars = (rating, size = 'w-4 h-4') => {
     return [...Array(5)].map((_, index) => (
       <svg
         key={index}
-        className={`${size} ${index < rating ? 'text-black' : 'text-gray-300'}`}
+        className={`${size} ${index < rating ? 'text-yellow-400' : 'text-gray-300'}`}
         fill="currentColor"
         viewBox="0 0 20 20"
       >
@@ -223,7 +228,7 @@ const ProductReviews = ({ productId }) => {
     });
   };
 
-  if (loading) {
+  if (loading && reviews.length === 0) {
     return (
       <div className="w-full bg-white rounded-xl p-6 shadow-sm border">
         <div className="animate-pulse space-y-4">
@@ -240,6 +245,15 @@ const ProductReviews = ({ productId }) => {
 
   return (
     <div className="w-full space-y-8">
+      {/* Toast */}
+      {toast.show && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast({ show: false, message: '', type: 'success' })}
+        />
+      )}
+
       {/* Reviews Header */}
       <div className="bg-white rounded-xl p-4 md:p-6 shadow-sm border">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
@@ -290,23 +304,60 @@ const ProductReviews = ({ productId }) => {
             )}
           </div>
 
-          {/* Write Review Button */}
-          <div className="flex-shrink-0">
-            <button
-              onClick={() => setShowReviewForm(!showReviewForm)}
-              disabled={!user}
-              className="w-full md:w-auto bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed text-sm md:text-base"
-            >
-              {!user ? 'Login to Review' : 'Write a Review'}
-            </button>
+          {/* Actions */}
+          <div className="flex-shrink-0 space-y-4">
+            {/* Sort Options */}
+            <div className="flex items-center space-x-2">
+              <label className="text-sm text-gray-600">Sort by:</label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="text-sm border border-gray-300 rounded px-2 py-1"
+              >
+                <option value="newest">Newest</option>
+                <option value="oldest">Oldest</option>
+                <option value="highest">Highest Rating</option>
+                <option value="lowest">Lowest Rating</option>
+              </select>
+            </div>
+
+            {/* Write/Edit Review Button */}
+            <div>
+              {userReview ? (
+                <div className="space-y-2">
+                  <button
+                    onClick={() => handleEditReview(userReview)}
+                    className="w-full md:w-auto bg-gray-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-700 transition-colors text-sm"
+                  >
+                    Edit My Review
+                  </button>
+                  <button
+                    onClick={() => handleDeleteReview(userReview._id)}
+                    className="w-full md:w-auto bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors text-sm"
+                  >
+                    Delete My Review
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowReviewForm(!showReviewForm)}
+                  disabled={!user}
+                  className="w-full md:w-auto bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed text-sm md:text-base"
+                >
+                  {!user ? 'Login to Review' : 'Write a Review'}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Review Form */}
       {showReviewForm && user && (
-        <div className="bg-white rounded-xl p-4 md:p-6 shadow-sm border">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Write Your Review</h3>
+        <div className="bg-white rounded-xl p-4 md:p-6 shadow-sm border text-left">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            {editingReview ? 'Edit Your Review' : 'Write Your Review'}
+          </h3>
           
           <form onSubmit={handleSubmitReview} className="space-y-4">
             {/* Rating */}
@@ -344,6 +395,7 @@ const ProductReviews = ({ productId }) => {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black text-sm md:text-base"
                 placeholder="Give your review a title"
                 required
+                maxLength={100}
               />
             </div>
 
@@ -359,14 +411,22 @@ const ProductReviews = ({ productId }) => {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black text-sm md:text-base"
                 placeholder="Share your experience with this product"
                 required
+                maxLength={1000}
               />
+              <p className="text-xs text-gray-500 mt-1">
+                {newReview.comment.length}/1000 characters
+              </p>
             </div>
 
             {/* Submit Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
               <button
                 type="button"
-                onClick={() => setShowReviewForm(false)}
+                onClick={() => {
+                  setShowReviewForm(false);
+                  setEditingReview(null);
+                  setNewReview({ rating: 5, title: '', comment: '' });
+                }}
                 className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors text-sm md:text-base"
               >
                 Cancel
@@ -376,7 +436,7 @@ const ProductReviews = ({ productId }) => {
                 disabled={submitting}
                 className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 text-sm md:text-base"
               >
-                {submitting ? 'Submitting...' : 'Submit Review'}
+                {submitting ? 'Submitting...' : (editingReview ? 'Update Review' : 'Submit Review')}
               </button>
             </div>
           </form>
@@ -425,22 +485,76 @@ const ProductReviews = ({ productId }) => {
                 <h5 className="font-medium text-gray-900 mb-2 text-sm md:text-base">{review.title}</h5>
               )}
               
-              <p className="text-gray-700 leading-relaxed text-sm md:text-base">{review.comment}</p>
+              <p className="text-gray-700 leading-relaxed text-sm md:text-base mb-4">{review.comment}</p>
+
+              {/* Admin Reply */}
+              {review.adminReply && (
+                <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                  <h6 className="font-medium text-gray-900 text-sm mb-2">Store Response:</h6>
+                  <p className="text-gray-700 text-sm">{review.adminReply}</p>
+                </div>
+              )}
 
               {/* Helpful Actions */}
-              <div className="flex items-center space-x-4 mt-4 pt-4 border-t border-gray-100">
+              {/* <div className="flex items-center space-x-4 pt-4 border-t border-gray-100">
                 <span className="text-xs md:text-sm text-gray-500">Was this review helpful?</span>
-                <button className="text-xs md:text-sm text-gray-600 hover:text-gray-800 transition-colors">
-                  👍 Yes
+                <button 
+                  onClick={() => handleVoteHelpful(review._id, 'yes')}
+                  className="text-xs md:text-sm text-gray-600 hover:text-gray-800 transition-colors"
+                >
+                  👍 Yes ({review.helpfulVotes?.yes?.length || 0})
                 </button>
-                <button className="text-xs md:text-sm text-gray-600 hover:text-gray-800 transition-colors">
-                  👎 No
+                <button 
+                  onClick={() => handleVoteHelpful(review._id, 'no')}
+                  className="text-xs md:text-sm text-gray-600 hover:text-gray-800 transition-colors"
+                >
+                  👎 No ({review.helpfulVotes?.no?.length || 0})
                 </button>
-              </div>
+              </div> */}
             </div>
           ))
         )}
       </div>
+
+      {/* Pagination */}
+      {pagination.totalPages > 1 && (
+        <div className="flex justify-center mt-8">
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={!pagination.hasPrev}
+              className="px-4 py-2 text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              ‹ Previous
+            </button>
+            
+            {[...Array(Math.min(5, pagination.totalPages))].map((_, index) => {
+              const pageNumber = index + 1;
+              return (
+                <button
+                  key={pageNumber}
+                  onClick={() => setCurrentPage(pageNumber)}
+                  className={`px-4 py-2 rounded ${
+                    currentPage === pageNumber
+                      ? 'bg-black text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  {pageNumber}
+                </button>
+              );
+            })}
+            
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(pagination.totalPages, prev + 1))}
+              disabled={!pagination.hasNext}
+              className="px-4 py-2 text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next ›
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
