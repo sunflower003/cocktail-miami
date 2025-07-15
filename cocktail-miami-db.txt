@@ -1,0 +1,148 @@
+database:
+1. User:
+{
+  _id,
+  name,
+  email,
+  passwordHash,
+  phone,
+  address,
+  gender,
+  age,
+  isEmailVerified: Boolean,
+  verificationToken: String,
+  role: "user" | "admin",
+  isBlocked: Boolean,
+  createdAt,
+  updatedAt
+}
+2. Product:
+{
+  _id,
+  name,
+  description,
+  price,
+  country,
+  discount,         // optional
+  category,         // ref to `categories`
+  images: [url],
+  stock,            // số lượng trong kho
+  sold: Number,
+  averageRating,
+  isFeatured,       // để gắn vào homepage
+  createdAt,
+  updatedAt
+}
+3. Category:
+{
+  _id,
+  name,
+  slug,
+  description,
+  createdAt,
+  updatedAt
+}
+4. Order:
+{
+  _id,
+  user: Objected,                // ref to `users`
+  items: [
+    {
+      product: ObjectId,         // ref to `products`
+      quantity,
+      price
+    }
+  ],
+  shippingAddress: {
+    street,
+    city,
+    district,
+    ward
+  },
+  paymentMethod: "payos" | "cod",
+  isPaid: Boolean,
+  paidAt,
+  status: "pending" | "processing" | "delivered" | "cancelled",
+  totalPrice,
+  voucherCode,                  // optional
+  createdAt,
+  updatedAt
+}
+5. Review:
+{
+  _id,
+  product: ObjectId,           // ref to `products`
+  user: ObjectId,              // ref to `users`
+  rating: Number,
+  comment: String,
+  isHidden: Boolean,
+  adminReply: String,         // optional
+  createdAt,
+  updatedAt
+}
+6. Wishlist:
+{
+  _id,
+  user: ObjectId,               // ref to `users`
+  products: [ObjectId]          // ref to `products`
+}
+7. Cart:
+{
+  _id,
+  user: ObjectId,               // ref to `users`
+  items: [
+    {
+      product: ObjectId,        // ref to `products`
+      quantity
+    }
+  ],
+  updatedAt
+}
+8. News:
+{
+  _id,
+  title,
+  slug,
+  content,
+  thumbnailUrl,
+  category,
+  createdAt,
+  updatedAt
+}
+9. Voucher:
+{
+  _id,
+  code,
+  discountPercent,           // ví dụ: 10%
+  maxDiscountAmount,         // giới hạn số tiền giảm
+  minOrderAmount,            // đơn tối thiểu
+  expiryDate,
+  isActive,
+  createdAt,
+  updatedAt
+}
+10. Messages:
+{
+  _id,
+  sender: ObjectId,          // ref to `users` hoặc `admin`
+  receiver: ObjectId,        // ref to `users` hoặc `admin`
+  message: String,coco
+  seen: Boolean,
+  createdAt
+}
+11. Notification:
+{
+  _id,
+  user: ObjectId,            // ref to `users`
+  message: String,
+  type: "order" | "promo" | "system",
+  isRead: Boolean,
+  createdAt
+}
+12. Social:
+{
+  _id,
+  platform: "facebook" | "instagram" | "tiktok",
+  url,
+  isActive
+}
